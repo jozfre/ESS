@@ -182,7 +182,7 @@
                   <tr>
                     <th>Space ID</th>
                     <th>Space Name</th>
-                    <th>Space Capacity</th>
+                    <th>Space Capacity (People)</th>
                     <th>Space Type</th>
                     <th>Action</th>
                   </tr>
