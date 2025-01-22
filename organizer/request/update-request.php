@@ -160,7 +160,7 @@
                                             <label for="reqEventType">Event Type</label>
                                             <select name="reqEventType" id="reqEventType" class="form-control" placeholder="Choose Event Type" required>
                                                 <option value="Islamic Talks">Islamic Talks</option>
-                                                <option value="Wedding">Wedding</option>
+                                                <option value="Nikah/Wedding">Nikah/Wedding</option>
                                                 <option value="Class">Class</option>
                                                 <option value="Others">Others</option>
                                             </select>
