@@ -38,6 +38,7 @@
   </nav>
   <!-- /.navbar -->
 
+  <!-- Main Sidebar Container -->
   <aside class="main-sidebar sidebar-dark-primary elevation-4 d-flex flex-column" style="height: 100vh;">
     <!-- Brand Logo -->
     <a class="brand-link">
