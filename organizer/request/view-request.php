@@ -127,7 +127,7 @@
                                 <div class="card-header">
                                     <h3 class="card-title">Request Details</h3>
                                     <div class="d-flex justify-content-end">
-                                        <button type="button" class="btn btn-danger btn-sm float-right mr-2" data-toggle="modal" data-target="#deleteModal"><i class="fas fa-trash-alt"></i> Cancel Request</button>
+                                        <button type="button" class="btn btn-danger btn-sm float-right mr-2" data-toggle="modal" data-target="#deleteModal"><i class="fas fa-window-close"></i> Cancel Request</button>
                                         <button type="button" class="btn btn-primary btn-sm float-right" onclick="location.href='update-request.php'"><i class="fas fa-edit"></i> Update Details</button>
                                     </div>
                                 </div>
