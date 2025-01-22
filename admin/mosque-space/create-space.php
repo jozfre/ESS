@@ -162,7 +162,7 @@
                     <input name="spaceName" type="text" class="form-control" id="spaceName" placeholder="Enter the new space name" title="Please enter the new space name" required>
                   </div>
                   <div class="form-group">
-                    <label for="spaceCapacity">Space Capacity</label>
+                    <label for="spaceCapacity">Space Capacity (People)</label>
                     <input name="spaceCapacity" type="number" class="form-control" id="spaceCapacity" min="0" placeholder="Enter the new space capacity" title="Please enter the space capacity" required>
                   </div>
                   <div class="form-group">

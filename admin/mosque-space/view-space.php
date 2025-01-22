@@ -170,8 +170,8 @@
                     <input name="spaceName" class="form-control" id="spaceName" value="Dewan Singgah Seri" readonly>
                   </div>
                   <div class="form-group">
-                    <label for="spaceCapacity">Space Capacity</label>
-                    <input name="spaceCapacity" class="form-control" id="spaceCapacity" value="1000 Orang" readonly>
+                    <label for="spaceCapacity">Space Capacity (People)</label>
+                    <input name="spaceCapacity" class="form-control" id="spaceCapacity" value="1000" readonly>
                   </div>
                   <div class="form-group">
                     <label for="spaceType">Space Type</label>
