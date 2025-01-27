@@ -139,7 +139,7 @@
                   <tr>
                     <td>2025-01-01</td>
                     <td>Majlis Perkahwinan</td>
-                    <td>Wedding</td>
+                    <td>Nikah/Wedding</td>
                     <td>To Be Reviewed</td>
                     <td>
                     <a href="view-request.php?token=<?php echo $user['token']; ?>" class="btn btn-info btnn-block btn-sm float-middle fas fa-eye"></a>
