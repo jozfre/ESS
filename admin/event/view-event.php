@@ -164,8 +164,20 @@
                 <form name="form" method="POST" action="create-event.php" enctype="multipart/form-data">
                   <div class="card-body">
                     <div class="form-group">
+                      <label for="eventID">Event ID</label>
+                      <input name="eventID" class="form-control" id="eventID" value="0001" readonly>
+                    </div>
+                    <div class="form-group">
                       <label for="orgName">Organizer Name</label>
                       <input name="orgName" type="text" class="form-control" id="orgName" value="Anjuran MBTHO" readonly>
+                    </div>
+                    <div class="form-group">
+                      <label for="orgTelNum">Organizer Telephone Number</label>
+                      <input name="orgTelNum" type="text" class="form-control" id="orgTelNum" pattern="[0-9]{10}" value="01111467006" readonly>
+                    </div>
+                    <div class="form-group">
+                      <label for="orgAddress">Organizer Address</label>
+                      <input name="orgAddress" type="text" class="form-control" id="orgAddress" value="Persiaran Suadamai" readonly>
                     </div>
                     <div class="form-group">
                       <label for="eventName">Event Name</label>
@@ -229,6 +241,9 @@
                       </div>
                     </div>
                     <!-- /.card-body -->
+                    <div class="card-footer d-flex justify-content-between align-items-center">
+                      <bon type="button" class="btn btn-dark" onclick="location.href='list-event.php'">Back</button>
+                    </div>
                 </form>
               </div>
               <!-- /.card -->
@@ -268,23 +283,23 @@
   <!-- AdminLTE App -->
   <script src="../../dist/js/adminlte.min.js"></script>
   <!-- Deletion Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="deleteModalLabel">Delete Event</h5>
-      </div>
-      <div class="modal-body">
-        Are you sure you want to delete the following event?
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Back</button>
-        <button type="button" class="btn btn-primary">Confirm</button>
+  <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="deleteModalLabel">Delete Event</h5>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to delete the following event?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Back</button>
+          <button type="button" class="btn btn-primary">Confirm</button>
+        </div>
       </div>
     </div>
   </div>
-</div>
-<!-- End of Deletion Modal -->
+  <!-- End of Deletion Modal -->
 </body>
 
 </html>
