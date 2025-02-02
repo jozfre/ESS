@@ -11,6 +11,18 @@ if(!isset($_SESSION['userID']))
 }
 
 include "../../php/dbconn.php";
+
+//sql to retrieve data for this user
+if(isset($_GET['userID'])){
+  $userID = mysqli_real_escape_string($conn, $_GET['userID']);
+  $sql = "SELECT * FROM user WHERE userID='$userID'";
+  $result = mysqli_query($conn,$sql);
+  if(mysqli_num_rows($result) > 0){
+    $user = mysqli_fetch_assoc($result);
+  }else {
+    die(mysqli_error($conn));
+  }
+}
 ?>
 
 <!DOCTYPE html>
@@ -169,8 +181,13 @@ include "../../php/dbconn.php";
               <div class="card-header">
                 <h3 class="card-title">Staff Details</h3>
                 <div class="d-flex justify-content-end">
+
+                <?php if($user['name'] != ($_SESSION['name'])) : ?>
+                
+                <?php else : ?>
                     <button type="button" class="btn btn-danger btn-sm float-right mr-2" data-toggle="modal" data-target="#deleteModal"><i class="fas fa-trash-alt"></i> Delete Staff</button>
                     <button type="button" class="btn btn-primary btn-sm float-right" onclick="location.href='update-staff.php'"><i class="fas fa-edit"></i> Update Details</button>
+                <?php endif; ?> 
                 </div>
               </div>
               <!-- /.card-header -->
@@ -178,20 +195,20 @@ include "../../php/dbconn.php";
               <form>
                 <div class="card-body">
                   <div class="form-group">
-                    <label for="staffID">Staff ID</label>
-                    <input name="staffID" class="form-control" id="staffID" value="0001" readonly>
+                    <label for="userID">Staff ID</label>
+                    <input name="userID" class="form-control" id="userID" value="<?= $user['userID'];?>" readonly>
                   </div>
                   <div class="form-group">
                     <label for="name">Staff Name</label>
-                    <input name="name" class="form-control" id="name" value="Encik Hadi" readonly>
+                    <input name="name" class="form-control" id="name" value="<?= $user['name'];?>" readonly>
                   </div>
                   <div class="form-group">
                     <label for="telNum">Telephone Number</label>
-                    <input name="telNum" class="form-control" id="telNum" value="012345678" readonly>
+                    <input name="telNum" class="form-control" id="telNum" value="<?= $user['telNum'];?>" readonly>
                   </div>
                   <div class="form-group">
                     <label for="email">Email</label>
-                    <input name="email" class="form-control" id="email" value="example@email.com" readonly>
+                    <input name="email" class="form-control" id="email" value="<?= $user['email'];?>" readonly>
                   </div>
                 </div>
                 <!-- /.card-body -->
