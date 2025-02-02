@@ -10,8 +10,8 @@ if (isset($_SESSION['id'])) {
 $error = '';
 
 if (isset($_POST['login'])) {
-  $email = $_POST['email'];
-  $password = $_POST['password'];
+  $email = mysqli_real_escape_string($conn, $_POST['email']);
+  $password = mysqli_real_escape_string($conn, $_POST['password']);
 
   // Replace with your own query to check the credentials
   $query = "SELECT * FROM user WHERE email='$email' AND password='$password'";
@@ -61,8 +61,12 @@ if (isset($_POST['login'])) {
       <p class="login-box-msg">Enter your email and password below to log in as admin</p>
 
       <?php if ($error): ?>
-        <div class="alert alert-danger text" role="alert">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
           <?php echo $error; ?>
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+
         </div>
       <?php endif; ?>
 
