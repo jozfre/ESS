@@ -193,7 +193,6 @@ $row = mysqli_num_rows($result);
                     <?php
                     if($row > 0)
                     {
-                        $counter = 1;
                         while($user = mysqli_fetch_assoc($result))
                         {
                           ?>
@@ -207,7 +206,6 @@ $row = mysqli_num_rows($result);
                     </td>
                   </tr>
                   <?php
-                          $counter++;
                         } 
                     }
                   ?>
