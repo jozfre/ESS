@@ -1,3 +1,18 @@
+<?php
+session_start();
+if(!isset($_SESSION['orglogged']) || ($_SESSION['orglogged'] != 1))
+{
+    header("Location: ../../index.php");
+}
+
+if(!isset($_SESSION['orgID']))
+{
+    header("Location: ../../php/logout.php");
+}
+
+include "../../php/dbconn.php";
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -54,7 +69,7 @@
           <img src="../../images/user-icon.png" class="img-circle elevation-2" alt="User Image">
         </div>
         <div class="info">
-          <a href="#" class="d-block">Johan Zafri</a>
+          <a href="#" class="d-block text-truncate"><?php if(isset($_SESSION['orgName'])) { echo $_SESSION['orgName']; } ?></a>
           <a href="#" class="d-block">ORGANIZER</a>
         </div>
       </div>
