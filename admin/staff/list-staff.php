@@ -1,3 +1,19 @@
+<?php
+session_start();
+if(!isset($_SESSION['userlogged']) || ($_SESSION['userlogged'] != 1))
+{
+    header("Location: ../../index.php");
+}
+
+if(!isset($_SESSION['userID']))
+{
+    header("Location: ../../php/logout.php");
+}
+
+include "../../php/dbconn.php";
+
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -52,7 +68,8 @@
           <img src="../../images/user-icon.png" class="img-circle elevation-2" alt="User Image">
         </div>
         <div class="info">
-          <a href="#" class="d-block">Johan Zafri</a>
+          <a href="#" class="d-block text-truncate"><?php if(isset($_SESSION['name'])) { echo $_SESSION['name']; } ?></a>
+          <a href="#" class="d-block">ADMIN</a>
         </div>
       </div>
 
@@ -174,7 +191,7 @@
                     <td>012345678</td>
                     <td>hadi@email.com</td>
                     <td>
-                    <a href="view-staff.php?token=<?php echo $user['token']; ?>" class="btn btn-info btnn-block btn-sm float-middle fas fa-eye"></a>
+                    <a href="view-staff.php?userID=<?php echo $user['userID']; ?>" class="btn btn-info btnn-block btn-sm float-middle fas fa-eye"></a>
                     </td>
                   </tr>
                   </tbody>

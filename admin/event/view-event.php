@@ -1,3 +1,18 @@
+<?php
+session_start();
+if(!isset($_SESSION['userlogged']) || ($_SESSION['userlogged'] != 1))
+{
+    header("Location: ../../index.php");
+}
+
+if(!isset($_SESSION['userID']))
+{
+    header("Location: ../../php/logout.php");
+}
+
+include "../../php/dbconn.php";
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -54,7 +69,8 @@
             <img src="../../images/user-icon.png" class="img-circle elevation-2" alt="User Image">
           </div>
           <div class="info">
-            <a href="#" class="d-block">Johan Zafri</a>
+            <a href="#" class="d-block text-truncate"><?php if(isset($_SESSION['name'])) { echo $_SESSION['name']; } ?></a>
+            <a href="#" class="d-block">ADMIN</a>
           </div>
         </div>
 
