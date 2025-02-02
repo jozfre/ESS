@@ -1,5 +1,35 @@
+<?php
+include "php/dbconn.php";
+session_start();
+
+if (isset($_SESSION['id'])) {
+  header("Location: admin/dashboard.php");
+  exit();
+}
+
+$error = '';
+
+if (isset($_POST['login'])) {
+  $email = $_POST['email'];
+  $password = $_POST['password'];
+
+  // Replace with your own query to check the credentials
+  $query = "SELECT * FROM user WHERE email='$email' AND password='$password'";
+  $result = mysqli_query($conn, $query);
+
+  if (mysqli_num_rows($result) == 1) {
+    $_SESSION['id'] = mysqli_fetch_assoc($result)['id'];
+    header("Location: admin/dashboard.php");
+    exit();
+  } else {
+    $error = 'Invalid email or password.';
+  }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -14,25 +44,32 @@
   <!-- Theme style -->
   <link rel="stylesheet" href="../../dist/css/adminlte.min.css">
 </head>
+
 <body class="hold-transition login-page">
-<div class="login-box">
-  <!-- /.login-logo -->
-  <div class="login-logo"></div>
+  <div class="login-box">
+    <!-- /.login-logo -->
+    <div class="login-logo"></div>
   </div>
   <div class="card card-outline card-green">
-  <div class="card-header text-center">
-    <img src="images/logo-mbtho.png" alt="Logo MBTHO" class="img-fluid" style="max-width: 150px;">
-  </div>
+    <div class="card-header text-center">
+      <img src="images/logo-mbtho.png" alt="Logo MBTHO" class="img-fluid" style="max-width: 150px;">
+    </div>
     <div class="card-header text-center">
       <a class="h1"><b>Event Scheduling System</b> (ESS)</a>
     </div>
     <div class="card-body">
       <p class="login-box-msg">Enter your email and password below to log in as admin</p>
 
-      <form action="" method="post">
+      <?php if ($error): ?>
+        <div class="alert alert-danger text" role="alert">
+          <?php echo $error; ?>
+        </div>
+      <?php endif; ?>
+
+      <form action="index.php" method="post">
         <label for="email" class="form-label">Email</label>
         <div class="input-group mb-3">
-          <input name="email" id="email" type="email" class="form-control" placeholder="example@email.com">
+          <input name="email" id="email" type="email" class="form-control" placeholder="example@email.com" title="Please enter your email" required>
           <div class="input-group-append">
             <div class="input-group-text">
               <span class="fas fa-envelope"></span>
@@ -41,7 +78,7 @@
         </div>
         <label for="password" class="form-label">Password</label>
         <div class="input-group mb-3">
-          <input name="password" id="password" type="password" class="form-control" placeholder="********">
+          <input name="password" id="password" type="password" class="form-control" placeholder="********" title="Please enter your password" required>
           <div class="input-group-append">
             <div class="input-group-text">
               <span class="fas fa-lock"></span>
@@ -50,11 +87,11 @@
         </div>
         <div class="row">
           <div class="col-8">
-            
+
           </div>
           <!-- /.col -->
           <div class="col-12">
-            <button type="submit" class="btn btn-success btn-block">Log In as Admin</button>
+            <button type="submit" name="login" class="btn btn-success btn-block">Log In as Admin</button>
           </div>
           <!-- /.col -->
         </div>
@@ -71,14 +108,15 @@
     <!-- /.card-body -->
   </div>
   <!-- /.card -->
-</div>
-<!-- /.login-box -->
+  </div>
+  <!-- /.login-box -->
 
-<!-- jQuery -->
-<script src="../../plugins/jquery/jquery.min.js"></script>
-<!-- Bootstrap 4 -->
-<script src="../../plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-<!-- AdminLTE App -->
-<script src="../../dist/js/adminlte.min.js"></script>
+  <!-- jQuery -->
+  <script src="../../plugins/jquery/jquery.min.js"></script>
+  <!-- Bootstrap 4 -->
+  <script src="../../plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <!-- AdminLTE App -->
+  <script src="../../dist/js/adminlte.min.js"></script>
 </body>
+
 </html>
