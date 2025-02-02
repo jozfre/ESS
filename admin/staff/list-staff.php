@@ -12,6 +12,11 @@ if(!isset($_SESSION['userID']))
 
 include "../../php/dbconn.php";
 
+// SQL query to get all users
+$sql = "SELECT * FROM user";
+$result = mysqli_query($conn, $sql);
+$row = mysqli_num_rows($result);
+
 ?>
 
 <!DOCTYPE html>
@@ -185,15 +190,27 @@ include "../../php/dbconn.php";
                   </tr>
                   </thead>
                   <tbody>
+                    <?php
+                    if($row > 0)
+                    {
+                        $counter = 1;
+                        while($user = mysqli_fetch_assoc($result))
+                        {
+                          ?>
                   <tr>
-                    <td>0001</td>
-                    <td>Encik Hadi</td>
-                    <td>012345678</td>
-                    <td>hadi@email.com</td>
+                    <td><?php echo $user['userID']; ?></td>
+                    <td><?php echo $user['name']; ?></td>
+                    <td><?php echo $user['telNum']; ?></td>
+                    <td><?php echo $user['email']; ?></td>
                     <td>
                     <a href="view-staff.php?userID=<?php echo $user['userID']; ?>" class="btn btn-info btnn-block btn-sm float-middle fas fa-eye"></a>
                     </td>
                   </tr>
+                  <?php
+                          $counter++;
+                        } 
+                    }
+                  ?>
                   </tbody>
                   <tfoot>
                   <tr>
