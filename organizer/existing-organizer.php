@@ -1,3 +1,38 @@
+<?php
+include "../php/dbconn.php";
+session_start();
+
+if (isset($_SESSION['orgID'])) {
+  header("Location: schedule/view-schedule.php");
+  exit();
+}
+
+$error = '';
+
+if (isset($_POST['accessOrg'])) {
+  $orgName = mysqli_real_escape_string($conn, $_POST['orgName']);
+  $orgTelNum = mysqli_real_escape_string($conn, $_POST['orgTelNum']);
+
+  // Replace with your own query to check the credentials
+  $query = "SELECT * FROM organizer WHERE orgName='$orgName' AND orgTelNum='$orgTelNum'";
+  $result = mysqli_query($conn, $query);
+
+  if (mysqli_num_rows($result) == 1) {
+    $row = mysqli_fetch_assoc($result);
+    $_SESSION['orgID'] = $row['orgID'];
+    $_SESSION['orgName'] = $row['orgName'];
+    $_SESSION['orgTelNum'] = $row['orgTelNum'];
+    $_SESSION['orglogged'] = 1;
+    header("Location: schedule/view-schedule.php");
+    exit();
+  } else {
+    $error = 'Invalid name or telephone number.';
+  }
+  
+}
+
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,8 +63,12 @@
     </div>
     <div class="card-body">
       <p class="login-box-msg">Please enter your name and telephone number to access as organizer</p>
-
-      <form action="" method="post">
+      <?php if ($error): ?>
+        <div class="alert alert-danger alert-center" role="alert">
+          <?php echo $error; ?>
+        </div>
+      <?php endif; ?>
+      <form action="existing-organizer.php" method="post">
         <label for="orgName" class="form-label">Name</label>
         <div class="input-group mb-3">
           <input name="orgName" id="orgName" type="text" class="form-control" placeholder="Enter your name">
@@ -54,7 +93,7 @@
           </div>
           <!-- /.col -->
           <div class="col-12">
-            <button type="submit" class="btn btn-primary btn-block">Access as Organizer</button>
+            <button type="submit" name="accessOrg" class="btn btn-primary btn-block">Access as Organizer</button>
           </div>
           <!-- /.col -->
         </div>
