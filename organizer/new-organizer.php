@@ -1,3 +1,51 @@
+<?php
+include "../php/dbconn.php";
+session_start();
+
+
+if (isset($_SESSION['orgID'])) {
+  header("Location: schedule/view-schedule.php");
+  exit();
+}
+
+$error = '';
+
+if (isset($_POST['register'])) {
+  $orgName = mysqli_real_escape_string($conn, $_POST['orgName']);
+  $orgTelNum = mysqli_real_escape_string($conn, $_POST['orgTelNum']);
+
+  // Check if organizer already exists
+  $query = "SELECT * FROM organizer WHERE orgName=? AND orgTelNum=?";
+  $stmt = $conn->prepare($query);
+  $stmt->bind_param("ss", $orgName, $orgTelNum);
+  $stmt->execute();
+  $result = $stmt->get_result();
+
+  if ($result->num_rows > 0) {
+    $error = 'Organizer already exists.';
+  } else {
+    // Register new organizer
+    $query = "INSERT INTO organizer (orgName, orgTelNum) VALUES (?, ?)";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("ss", $orgName, $orgTelNum);
+    if ($stmt->execute()) {
+      // Log in the new organizer
+      $_SESSION['orgID'] = $stmt->insert_id;
+      $_SESSION['orgName'] = $orgName;
+      $_SESSION['orgTelNum'] = $orgTelNum;
+      $_SESSION['orglogged'] = 1;
+      header("Location: schedule/view-schedule.php");
+      exit();
+    } else {
+      $error = 'Error registering organizer.';
+    }
+  }
+
+  $stmt->close();
+}
+
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,8 +76,12 @@
     </div>
     <div class="card-body">
       <p class="login-box-msg">Please enter your name and telephone number to register as new organizer</p>
-
-      <form action="" method="post">
+      <?php if ($error): ?>
+        <div class="alert alert-danger alert-center" role="alert">
+          <?php echo $error; ?>
+        </div>
+      <?php endif; ?>
+      <form action="new-organizer.php" method="post">
         <label for="orgName" class="form-label">Name</label>
         <div class="input-group mb-3">
           <input name="orgName" id="orgName" type="text" class="form-control" placeholder="Enter your name">
@@ -54,7 +106,7 @@
           </div>
           <!-- /.col -->
           <div class="col-12">
-            <button type="submit" class="btn btn-primary btn-block">Register and Access as Organizer</button>
+            <button type="submit" name="register" class="btn btn-primary btn-block">Register and Access as Organizer</button>
           </div>
           <!-- /.col -->
         </div>
