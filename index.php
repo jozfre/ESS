@@ -14,11 +14,16 @@ if (isset($_POST['login'])) {
   $password = mysqli_real_escape_string($conn, $_POST['password']);
 
   // Replace with your own query to check the credentials
-  $query = "SELECT * FROM user WHERE email='$email' AND password='$password'";
+  $query = "SELECT * FROM user WHERE email='$email' AND password='$password' AND isDeleted = 0";
   $result = mysqli_query($conn, $query);
 
   if (mysqli_num_rows($result) == 1) {
-    $_SESSION['id'] = mysqli_fetch_assoc($result)['id'];
+    $row = mysqli_fetch_assoc($result);
+    $_SESSION['userID'] = $row['userID'];
+    $_SESSION['name'] = $row['name'];
+    $_SESSION['telNum'] = $row['telNum'];
+    $_SESSION['email'] = $row['email'];
+    $_SESSION['userlogged'] = 1;
     header("Location: admin/dashboard.php");
     exit();
   } else {
