@@ -53,6 +53,7 @@
         </div>
         <div class="info">
           <a href="#" class="d-block">Johan Zafri</a>
+          <a href="#" class="d-block">ADMIN</a>
         </div>
       </div>
 

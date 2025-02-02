@@ -55,6 +55,7 @@
         </div>
         <div class="info">
           <a href="#" class="d-block">Johan Zafri</a>
+          <a href="#" class="d-block">ORGANIZER</a>
         </div>
       </div>
 
