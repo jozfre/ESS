@@ -10,7 +10,7 @@ if (isset($_SESSION['orgID'])) {
 $error = '';
 
 if (isset($_POST['accessOrg'])) {
-  $orgName = mysqli_real_escape_string($conn, $_POST['orgName']);
+  $orgName = strtoupper(mysqli_real_escape_string($conn, $_POST['orgName']));
   $orgTelNum = mysqli_real_escape_string($conn, $_POST['orgTelNum']);
 
   // Replace with your own query to check the credentials
@@ -18,23 +18,27 @@ if (isset($_POST['accessOrg'])) {
   $result = mysqli_query($conn, $query);
 
   if (mysqli_num_rows($result) == 1) {
-    $row = mysqli_fetch_assoc($result);
-    $_SESSION['orgID'] = $row['orgID'];
-    $_SESSION['orgName'] = $row['orgName'];
-    $_SESSION['orgTelNum'] = $row['orgTelNum'];
-    $_SESSION['orglogged'] = 1;
-    header("Location: schedule/view-schedule.php");
-    exit();
+    if (strtoupper($row['orgName']) === $orgName) {
+      $row = mysqli_fetch_assoc($result);
+      $_SESSION['orgID'] = $row['orgID'];
+      $_SESSION['orgName'] = $row['orgName'];
+      $_SESSION['orgTelNum'] = $row['orgTelNum'];
+      $_SESSION['orglogged'] = 1;
+      header("Location: schedule/view-schedule.php");
+      exit();
+    } else {
+      $error = 'Invalid name or telephone number.';
+    }
   } else {
-    $error = 'Invalid name or telephone number.';
+    $error = 'Organizer is not registered.';
   }
-  
 }
 
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -49,23 +53,27 @@ if (isset($_POST['accessOrg'])) {
   <!-- Theme style -->
   <link rel="stylesheet" href="../dist/css/adminlte.min.css">
 </head>
+
 <body class="hold-transition login-page">
-<div class="login-box">
-  <!-- /.login-logo -->
-  <div class="login-logo"></div>
+  <div class="login-box">
+    <!-- /.login-logo -->
+    <div class="login-logo"></div>
   </div>
   <div class="card card-outline card-green">
-  <div class="card-header text-center">
-    <img src="../images/logo-mbtho.png" alt="Logo MBTHO" class="img-fluid" style="max-width: 150px;">
-  </div>
+    <div class="card-header text-center">
+      <img src="../images/logo-mbtho.png" alt="Logo MBTHO" class="img-fluid" style="max-width: 150px;">
+    </div>
     <div class="card-header text-center">
       <a class="h1"><b>Event Scheduling System</b> (ESS)</a>
     </div>
     <div class="card-body">
       <p class="login-box-msg">Please enter your name and telephone number to access as organizer</p>
       <?php if ($error): ?>
-        <div class="alert alert-danger alert-center" role="alert">
+        <div class="alert alert-danger alert-center alert-dismissible fade show" role="alert">
           <?php echo $error; ?>
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
         </div>
       <?php endif; ?>
       <form action="existing-organizer.php" method="post">
@@ -89,7 +97,7 @@ if (isset($_POST['accessOrg'])) {
         </div>
         <div class="row">
           <div class="col-8">
-            
+
           </div>
           <!-- /.col -->
           <div class="col-12">
@@ -110,14 +118,15 @@ if (isset($_POST['accessOrg'])) {
     <!-- /.card-body -->
   </div>
   <!-- /.card -->
-</div>
-<!-- /.login-box -->
+  </div>
+  <!-- /.login-box -->
 
-<!-- jQuery -->
-<script src="../../plugins/jquery/jquery.min.js"></script>
-<!-- Bootstrap 4 -->
-<script src="../../plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-<!-- AdminLTE App -->
-<script src="../../dist/js/adminlte.min.js"></script>
+  <!-- jQuery -->
+  <script src="../../plugins/jquery/jquery.min.js"></script>
+  <!-- Bootstrap 4 -->
+  <script src="../../plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <!-- AdminLTE App -->
+  <script src="../../dist/js/adminlte.min.js"></script>
 </body>
+
 </html>
