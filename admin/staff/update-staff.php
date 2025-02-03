@@ -11,6 +11,42 @@ if(!isset($_SESSION['userID']))
 }
 
 include "../../php/dbconn.php";
+
+//sql to retrieve data for this user
+if (isset($_GET['userID'])) {
+  $userID = mysqli_real_escape_string($conn, $_GET['userID']);
+  $sql = "SELECT * FROM user WHERE userID='$userID'";
+  $result = mysqli_query($conn, $sql);
+  if (mysqli_num_rows($result) > 0) {
+    $user = mysqli_fetch_assoc($result);
+  } else {
+    die(mysqli_error($conn));
+  }
+}
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+  $name = mysqli_real_escape_string($conn, trim($_POST['name']));
+  $email = mysqli_real_escape_string($conn, trim($_POST['email']));
+  $telNum = mysqli_real_escape_string($conn, trim($_POST['telNum']));
+  $password = mysqli_real_escape_string($conn, $_POST['password']);
+  $confirmPassword = mysqli_real_escape_string($conn, $_POST['confirmPassword']);
+
+  if ($password === $confirmPassword) {
+    $sql = "UPDATE user SET name='$name', email='$email', telNum='$telNum', password='$password' WHERE userID='$userID'";
+    if (mysqli_query($conn, $sql)) {
+      $_SESSION['update_success'] = true;
+      $_SESSION['name'] = $name;
+      header("Location: view-staff.php?userID=$userID");
+      exit();
+    } else {
+      echo "Error updating record: " . mysqli_error($conn);
+    }
+  } else {
+    echo "Passwords do not match.";
+  }
+}
+
+
 ?>
 
 <!DOCTYPE html>
@@ -149,7 +185,7 @@ include "../../php/dbconn.php";
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
                 <li class="breadcrumb-item"><a href="list-staff.php">List of Staff</a></li>
-                <li class="breadcrumb-item"><a href="view-staff.php">View Staff Details</a></li>
+                <li class="breadcrumb-item"><a href="view-staff.php?userID=<?php echo $user['userID']; ?>">View Staff Details</a></li>
                 <li class="breadcrumb-item active">Update Staff Details</li>
             </ol>
           </div>
@@ -172,36 +208,37 @@ include "../../php/dbconn.php";
               </div>
               <!-- /.card-header -->
               <!-- form start -->
-              <form>
+              <form id="updateForm" action="update-staff.php?userID=<?php echo $userID; ?>" method="post" onsubmit="return validateForm()">
                 <div class="card-body">
                   <div class="form-group">
-                    <label for="staffID">Staff ID</label>
-                    <input name="staffID" class="form-control" id="staffID" value="0001" readonly>
+                    <label for="userID">Staff ID</label>
+                    <input name="userID" class="form-control" id="userID" value="<?= $user['userID'];?>" readonly>
                   </div>
                   <div class="form-group">
                     <label for="name">Staff Name</label>
-                    <input name="name" class="form-control" id="name" value="Encik Hadi" required>
+                    <input name="name" class="form-control" id="name" value="<?= $user['name'];?>" required>
                   </div>
                   <div class="form-group">
                     <label for="telNum">Telephone Number</label>
-                    <input name="telNum" class="form-control" id="telNum" value="012345678" required>
+                    <input name="telNum" class="form-control" id="telNum" value="<?= $user['telNum'];?>" required>
                   </div>
                   <div class="form-group">
                     <label for="email">Email</label>
-                    <input name="email" class="form-control" id="email" value="example@email.com" required>
+                    <input name="email" class="form-control" id="email" value="<?= $user['email'];?>" required>
                   </div>
                   <div class="form-group">
                     <label for="password">Password</label>
-                    <input name="password" type="password" class="form-control" id="password" value="12345678" required>
+                    <input name="password" type="password" class="form-control" id="password" value="<?= $user['password'];?>" required>
                   </div>
                   <div class="form-group">
                     <label for="confirmPassword">Confirm Password</label>
                     <input name="confirmPassword" type="password" class="form-control" id="confirmPassword" required>
                   </div>
+                  <div id="error-message" class="text-danger"></div>
                 </div>
                 <!-- /.card-body -->
                 <div class="card-footer d-flex justify-content-end">
-                  <button type="button" class="btn btn-dark mr-2" onclick="location.href='view-staff.php'">Back</button>
+                  <button type="button" class="btn btn-dark mr-2" onclick="location.href='view-staff.php?userID=<?php echo $user['userID']; ?>'">Back</button>
                   <button type="submit" class="btn btn-primary" name="submit">Save Updated Details</button>
                 </div>
               </form>
@@ -232,6 +269,20 @@ include "../../php/dbconn.php";
 <!-- AdminLTE App -->
 <script src="../../dist/js/adminlte.min.js"></script>
 <!-- Page specific script -->
+<script>
+function validateForm() {
+  var password = document.getElementById("password").value;
+  var confirmPassword = document.getElementById("confirmPassword").value;
+  var errorMessage = document.getElementById("error-message");
+
+  if (password !== confirmPassword) {
+    errorMessage.textContent = "Passwords do not match.";
+    return false;
+  }
+
+  return true;
+}
+</script>
 <script>
   $(function () {
   bsCustomFileInput.init();

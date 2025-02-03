@@ -188,7 +188,7 @@ if (isset($_GET['userID'])) {
 
                     <?php else : ?>
                       <button type="button" class="btn btn-danger btn-sm float-right mr-2" data-toggle="modal" data-target="#deleteModal"><i class="fas fa-trash-alt"></i> Delete Staff</button>
-                      <button type="button" class="btn btn-primary btn-sm float-right" onclick="location.href='update-staff.php'"><i class="fas fa-edit"></i> Update Details</button>
+                      <button type="button" class="btn btn-primary btn-sm float-right" onclick="location.href='update-staff.php?userID=<?php echo $user['userID']; ?>'"><i class="fas fa-edit"></i> Update Details</button>
                     <?php endif; ?>
                   </div>
                 </div>
