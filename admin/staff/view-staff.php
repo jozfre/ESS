@@ -21,6 +21,25 @@ if (isset($_GET['userID'])) {
     die(mysqli_error($conn));
   }
 }
+
+if(isset($_POST['submit'])) {
+  $userID = mysqli_real_escape_string($conn, $_GET['userID']);
+  
+  // SQL for soft delete
+  $sql = "UPDATE user SET isDeleted = 1 WHERE userID = ?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param("i", $userID);
+  
+  if($stmt->execute()) {
+      $_SESSION['delete_success'] = true;
+      header("Location: ../../php/logout.php");
+      exit();
+  } else {
+      $error = "Error deleting user: " . $conn->error;
+  }
+  $stmt->close();
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -236,20 +255,22 @@ if (isset($_GET['userID'])) {
 
   <!-- Deletion Modal -->
   <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="deleteModalLabel">Delete Staff</h5>
-        </div>
-        <div class="modal-body">
-          Are you sure you want to delete the following staff?
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Back</button>
-          <button type="button" class="btn btn-primary">Confirm</button>
+    <form id="deleteForm" method="post" action="view-staff.php?userID=<?php echo $userID; ?>" >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="deleteModalLabel">Delete Staff</h5>
+          </div>
+          <div class="modal-body">
+            Are you sure you want to delete the following staff?
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Back</button>
+            <button type="submit" id="deleteUser" name="submit" class="btn btn-primary">Confirm</button>
+          </div>
         </div>
       </div>
-    </div>
+    </form>
   </div>
   <!-- End of Deletion Modal -->
 

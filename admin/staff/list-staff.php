@@ -13,7 +13,7 @@ if(!isset($_SESSION['userID']))
 include "../../php/dbconn.php";
 
 // SQL query to get all users
-$sql = "SELECT * FROM user";
+$sql = "SELECT * FROM user WHERE isDeleted = 0";
 $result = mysqli_query($conn, $sql);
 $row = mysqli_num_rows($result);
 
