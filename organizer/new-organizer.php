@@ -11,8 +11,8 @@ if (isset($_SESSION['orgID'])) {
 $error = '';
 
 if (isset($_POST['register'])) {
-  $orgName = mysqli_real_escape_string($conn, $_POST['orgName']);
-  $orgTelNum = mysqli_real_escape_string($conn, $_POST['orgTelNum']);
+  $orgName = mysqli_real_escape_string($conn,trim($_POST['orgName']));
+  $orgTelNum = mysqli_real_escape_string($conn, trim($_POST['orgTelNum']));
 
   // Check if organizer already exists
   $query = "SELECT * FROM organizer WHERE orgName=? AND orgTelNum=?";

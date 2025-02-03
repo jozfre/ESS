@@ -10,7 +10,7 @@ if (isset($_SESSION['userID'])) {
 $error = '';
 
 if (isset($_POST['login'])) {
-  $email = mysqli_real_escape_string($conn, $_POST['email']);
+  $email = mysqli_real_escape_string($conn, trim($_POST['email']));
   $password = mysqli_real_escape_string($conn, $_POST['password']);
 
   // Replace with your own query to check the credentials

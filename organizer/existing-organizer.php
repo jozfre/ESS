@@ -10,16 +10,21 @@ if (isset($_SESSION['orgID'])) {
 $error = '';
 
 if (isset($_POST['accessOrg'])) {
-  $orgName = strtoupper(mysqli_real_escape_string($conn, $_POST['orgName']));
-  $orgTelNum = mysqli_real_escape_string($conn, $_POST['orgTelNum']);
+  $orgName = mysqli_real_escape_string($conn, trim($_POST['orgName'])); // Trim spaces
+  $orgTelNum = mysqli_real_escape_string($conn, trim($_POST['orgTelNum'])); // Trim spaces
 
-  // Replace with your own query to check the credentials
-  $query = "SELECT * FROM organizer WHERE orgName='$orgName' AND orgTelNum='$orgTelNum'";
+  // Convert input to lowercase
+  $orgName = strtolower($orgName);
+
+  // Query with case-insensitive name check
+  $query = "SELECT * FROM organizer WHERE LOWER(TRIM(orgName)) = '$orgName'";
   $result = mysqli_query($conn, $query);
 
   if (mysqli_num_rows($result) == 1) {
-    if (strtoupper($row['orgName']) === $orgName) {
-      $row = mysqli_fetch_assoc($result);
+    $row = mysqli_fetch_assoc($result);
+    
+    // Convert database orgName to lowercase and trim before comparison
+    if (strtolower(trim($row['orgName'])) == $orgName && trim($row['orgTelNum']) == $orgTelNum) {
       $_SESSION['orgID'] = $row['orgID'];
       $_SESSION['orgName'] = $row['orgName'];
       $_SESSION['orgTelNum'] = $row['orgTelNum'];
