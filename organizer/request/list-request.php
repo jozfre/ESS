@@ -1,16 +1,20 @@
 <?php
 session_start();
-if(!isset($_SESSION['orglogged']) || ($_SESSION['orglogged'] != 1))
-{
-    header("Location: ../../index.php");
+if (!isset($_SESSION['orglogged']) || ($_SESSION['orglogged'] != 1)) {
+  header("Location: ../../index.php");
 }
 
-if(!isset($_SESSION['orgID']))
-{
-    header("Location: ../../php/logout.php");
+if (!isset($_SESSION['orgID'])) {
+  header("Location: ../../php/logout.php");
 }
 
 include "../../php/dbconn.php";
+
+//SQL Query to get all list of requests
+$sql = "SELECT * FROM request where isDeleted = 0";
+$result = mysqli_query($conn, $sql);
+$row = mysqli_num_rows($result);
+
 ?>
 
 <!DOCTYPE html>
@@ -69,7 +73,9 @@ include "../../php/dbconn.php";
             <img src="../../images/user-icon.png" class="img-circle elevation-2" alt="User Image">
           </div>
           <div class="info">
-            <a href="#" class="d-block text-truncate"><?php if(isset($_SESSION['orgName'])) { echo $_SESSION['orgName']; } ?></a>
+            <a href="#" class="d-block text-truncate"><?php if (isset($_SESSION['orgName'])) {
+                                                        echo $_SESSION['orgName'];
+                                                      } ?></a>
             <a href="#" class="d-block">ORGANIZER</a>
           </div>
         </div>
@@ -162,33 +168,37 @@ include "../../php/dbconn.php";
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td>2025-01-01</td>
-                        <td>Majlis Perkahwinan</td>
-                        <td>Nikah/Wedding</td>
-                        <td><span class="badge badge-secondary">To Be Reviewed</span></td>
-                        <td>
-                          <a href="view-request.php?token=<?php echo $user['token']; ?>" class="btn btn-info btnn-block btn-sm float-middle fas fa-eye"></a>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>2025-01-01</td>
-                        <td>Majlis Aqiqah</td>
-                        <td>Others</td>
-                        <td><span class="badge badge-success">Approved</span></td>
-                        <td>
-                          <a href="view-request.php?token=<?php echo $user['token']; ?>" class="btn btn-info btnn-block btn-sm float-middle fas fa-eye"></a>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>2025-01-01</td>
-                        <td>Kuliah Ustaz Ahmad</td>
-                        <td>Islamic Talks</td>
-                        <td><span class="badge badge-danger">Not Approved</span></td>
-                        <td>
-                          <a href="view-request.php?token=<?php echo $user['token']; ?>" class="btn btn-info btnn-block btn-sm float-middle fas fa-eye"></a>
-                        </td>
-                      </tr>
+                      <?php
+                      if ($row > 0) {
+                        while ($request = mysqli_fetch_assoc($result)) {
+                          // Define badge style based on approval status
+                          $badgeClass = '';
+                          $statusText = '';
+
+                          if ($request['approvalStatus'] === NULL) {
+                            $badgeClass = 'badge-secondary';
+                            $statusText = 'To Be Reviewed';
+                          } else if ($request['approvalStatus'] == 1) {
+                            $badgeClass = 'badge-success';
+                            $statusText = 'Approved';
+                          } else if ($request['approvalStatus'] == 0) {
+                            $badgeClass = 'badge-danger';
+                            $statusText = 'Not Approved';
+                          }
+                      ?>
+                          <tr>
+                            <td><?php echo $request['dateOfRequest']; ?></td>
+                            <td><?php echo $request['reqEventName']; ?></td>
+                            <td><?php echo $request['reqEventType']; ?></td>
+                            <td><span class="badge <?php echo $badgeClass; ?>"><?php echo $statusText; ?></span></td>
+                            <td>
+                              <a href="view-request.php?requestID=<?php echo $request['requestID']; ?>" class="btn btn-info btnn-block btn-sm float-middle fas fa-eye"></a>
+                            </td>
+                          </tr>
+                      <?php
+                        }
+                      }
+                      ?>
                     </tbody>
                     <tfoot>
                       <tr>

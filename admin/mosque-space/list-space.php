@@ -10,7 +10,7 @@ if (!isset($_SESSION['userID'])) {
 
 include "../../php/dbconn.php";
 
-// SQL query to get all users
+// SQL query to get all space
 $sql = "SELECT * FROM space where isDeleted = 0";
 $result = mysqli_query($conn, $sql);
 $row = mysqli_num_rows($result);
