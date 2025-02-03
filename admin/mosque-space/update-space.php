@@ -208,7 +208,7 @@ if (isset($_POST['submit'])) {
             <div class="col-sm-6">
               <ol class="breadcrumb float-sm-right">
                 <li class="breadcrumb-item"><a href="list-space.php">List of Spaces</a></li>
-                <li class="breadcrumb-item"><a href="view-space.php">View Space Details</a></li>
+                <li class="breadcrumb-item"><a href="view-space.php?spaceID=<?php echo $spaceID; ?>">View Space Details</a></li>
                 <li class="breadcrumb-item active">Update Space Details</li>
               </ol>
             </div>
@@ -277,7 +277,7 @@ if (isset($_POST['submit'])) {
                     </div>
                     <!-- /.card-body -->
                     <div class="card-footer d-flex justify-content-end">
-                      <button type="button" class="btn btn-dark mr-2" onclick="location.href='view-space.php'">Back</button>
+                      <button type="button" class="btn btn-dark mr-2" onclick="location.href='view-space.php?spaceID=<?php echo $spaceID; ?>'">Back</button>
                       <button type="submit" class="btn btn-primary" name="submit">Save Updated Details</button>
                     </div>
                   </div>

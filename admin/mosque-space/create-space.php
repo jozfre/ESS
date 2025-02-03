@@ -23,7 +23,7 @@ if (isset($_POST['submit'])) {
 
 
   // Validate file type
-  if (in_array($fileType, ['image/jpeg', 'image/png'])) {
+  if (in_array($fileType, ['image/jpeg', 'image/jpg', 'image/png'])) {
     // Convert to base64
     $imageBase64 = base64_encode($fileData);
 
