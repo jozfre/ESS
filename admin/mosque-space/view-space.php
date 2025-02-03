@@ -219,7 +219,7 @@ if (!empty($space['spacePicture'])) {
                       <div id="carouselExampleControls" class="carousel slide" data-ride="carousel" style="background-color: rgba(0, 0, 0, 0.8); border: 2px solid #ccc; border-radius: 10px;">
                         <div class="carousel-inner text-center">
                           <div class="carousel-item active">
-                            <img src="<?php echo $imgSrc; ?>" class="d-block mx-auto" alt="Space Image" style="max-width: 300px;">
+                            <img src="<?php echo $imgSrc; ?>" class="d-block mx-auto" alt="Space Image" style="max-height: 500px;">
                           </div>
                         </div>
                         <button class="carousel-control-prev" type="button" data-target="#carouselExampleControls" data-slide="prev">
