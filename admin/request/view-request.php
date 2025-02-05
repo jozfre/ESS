@@ -251,9 +251,7 @@ if (isset($_GET['requestID'])) {
                                         <div class="form-group">
                                             <label for="approverDetails">Approver Details</label>
                                             <?php if (!empty($request['approverDetails'])): ?>
-                                                <div class="form-control" style="white-space: pre-line;" readonly>
-                                                    <?php echo htmlspecialchars($request['approverDetails']); ?>
-                                                </div>
+                                                <Textarea name="approverDetails" class="form-control" style="resize: none;" id="approverDetails" readonly><?php echo $request['approverDetails']; ?></Textarea>
                                             <?php else: ?>
                                                 <input class="form-control" value="No approver details available" readonly>
                                             <?php endif; ?>
@@ -295,7 +293,7 @@ if (isset($_GET['requestID'])) {
                                         </div>
                                         <div class="form-group">
                                             <label for="reqEventFacility">Mosque Space</label>
-                                            <select name="reqEventFacility" id="reqEventFacility" class="form-control" placeholder="Mosque Space" readonly>
+                                            <select name="reqEventFacility" id="reqEventFacility" class="form-control" placeholder="Mosque Space" readonly disabled>
                                                 <option value="<?php echo $request['spaceID']; ?>" selected><?php echo $request['spaceName']; ?></option>
                                             </select>
                                         </div>
