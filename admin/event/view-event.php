@@ -1,16 +1,39 @@
 <?php
 session_start();
-if(!isset($_SESSION['userlogged']) || ($_SESSION['userlogged'] != 1))
-{
-    header("Location: ../../index.php");
+if (!isset($_SESSION['userlogged']) || ($_SESSION['userlogged'] != 1)) {
+  header("Location: ../../index.php");
 }
 
-if(!isset($_SESSION['userID']))
-{
-    header("Location: ../../php/logout.php");
+if (!isset($_SESSION['userID'])) {
+  header("Location: ../../php/logout.php");
 }
 
 include "../../php/dbconn.php";
+
+if (isset($_GET['eventID'])) {
+  $eventID = mysqli_real_escape_string($conn, $_GET['eventID']);
+
+  $sql = "SELECT e.*, o.orgName, o.orgTelNum, s.spaceName, s.spacePicture, 
+          u.name as staffName, u.telNum as staffTelNum
+          FROM event e
+          LEFT JOIN organizer o ON e.orgID = o.orgID
+          LEFT JOIN space s ON e.spaceID = s.spaceID
+          LEFT JOIN user u ON e.assignedStaff = u.userID
+          WHERE e.eventID = ? AND e.isDeleted = 0";
+
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param("i", $eventID);
+  $stmt->execute();
+  $result = $stmt->get_result();
+
+  if ($result->num_rows > 0) {
+    $event = $result->fetch_assoc();
+  } else {
+    die("Event not found");
+  }
+  $stmt->close();
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -69,7 +92,9 @@ include "../../php/dbconn.php";
             <img src="../../images/user-icon.png" class="img-circle elevation-2" alt="User Image">
           </div>
           <div class="info">
-            <a href="#" class="d-block text-truncate"><?php if(isset($_SESSION['name'])) { echo $_SESSION['name']; } ?></a>
+            <a href="#" class="d-block text-truncate"><?php if (isset($_SESSION['name'])) {
+                                                        echo $_SESSION['name'];
+                                                      } ?></a>
             <a href="#" class="d-block">ADMIN</a>
           </div>
         </div>
@@ -172,16 +197,16 @@ include "../../php/dbconn.php";
                   <h3 class="card-title">Event Details</h3>
                   <div class="d-flex justify-content-end">
                     <button type="button" class="btn btn-danger btn-sm float-right mr-2" data-toggle="modal" data-target="#deleteModal"><i class="fas fa-trash-alt"></i> Delete Event</button>
-                    <button type="button" class="btn btn-primary btn-sm float-right" onclick="location.href='update-event.php'"><i class="fas fa-edit"></i> Update Details</button>
+                    <button type="button" class="btn btn-primary btn-sm float-right" onclick="location.href='update-event.php?eventID=<?php echo $event['eventID']; ?>'"><i class="fas fa-edit"></i> Update Details</button>
                   </div>
                 </div>
                 <!-- /.card-header -->
                 <!-- form start -->
-                <form name="form" method="POST" action="create-event.php" enctype="multipart/form-data">
+                <form>
                   <div class="card-body">
                     <div class="form-group">
                       <label for="eventID">Event ID</label>
-                      <input name="eventID" class="form-control" id="eventID" value="0001" readonly>
+                      <input name="eventID" class="form-control" id="eventID" value="<?php echo $event['eventID']; ?>" readonly>
                     </div>
                     <div class="form-group">
                       <label for="orgName">Organizer Name</label>
@@ -197,53 +222,40 @@ include "../../php/dbconn.php";
                     </div>
                     <div class="form-group">
                       <label for="eventName">Event Name</label>
-                      <input name="eventName" type="text" class="form-control" id="eventName" placeholder="Enter the new event name" title="Please enter the new event name" readonly>
+                      <input name="eventName" type="text" class="form-control" id="eventName" placeholder="Enter the new event name" title="Please enter the new event name" value="<?php echo $event['eventName']; ?>" readonly>
                     </div>
                     <div class="form-group">
                       <label for="eventType">Event Type</label>
-                      <select name="eventType" id="eventType" class="form-control" placeholder="Choose Event Type" readonly>
-                        <option value="Islamic Talks">Islamic Talks</option>
-                        <option value="Nikah/Wedding">Nikah/Wedding</option>
-                        <option value="Class">Class</option>
-                        <option value="Others">Others</option>
-                      </select>
+                      <input name="eventType" type="text" class="form-control" id="eventType" placeholder="Enter the new event type" title="Please enter the new event type" value="<?php echo $event['eventType']; ?>" readonly>
                     </div>
                     <div class="form-group">
                       <label for="eventDate">Date</label>
-                      <input name="eventDate" type="date" class="form-control" id="eventDate" placeholder="Choose the date for the event" title="Please choose the date for the event" readonly>
+                      <input name="eventDate" type="date" class="form-control" id="eventDate" placeholder="Enter the new event date" title="Please enter the new event date" value="<?php echo $event['eventDate']; ?>" readonly>
                     </div>
                     <div class="form-group">
                       <label for="eventTime">Event Time:</label><br>
                       <label for="eventStartTime">Start Time</label>
-                      <input name="eventStartTime" type="time" class="form-control" id="eventStartTime" placeholder="Please enter the start time for the event" title="Please enter the start time for the event" readonly><br>
+                      <input name="eventStartTime" type="time" class="form-control" id="eventStartTime" placeholder="Please enter the start time for the event" title="Please enter the start time for the event" value="<?php echo $event['eventTimeStart']; ?>" readonly><br>
                       <label for="eventEndTime">End Time</label>
-                      <input name="eventEndTime" type="time" class="form-control" id="eventEndTime" placeholder="Please enter the end time for the event" title="Please enter the end time for the event" readonly>
+                      <input name="eventEndTime" type="time" class="form-control" id="eventEndTime" placeholder="Please enter the end time for the event" title="Please enter the end time for the event" value="<?php echo $event['eventTimeEnd']; ?>" readonly>
                     </div>
                     <div class="form-group">
                       <label for="eventDescription">Event Description</label>
-                      <input name="eventDescription" type="text" class="form-control" id="eventDescription" placeholder="Enter the description of the event" title="Please enter the description of the event" readonly>
+                      <textarea name="eventDescription" class="form-control" id="eventDescription" rows="3" placeholder="Enter the new event description" title="Please enter the new event description" style="resize: none" readonly><?php echo $event['eventDescription']; ?></textarea>
                     </div>
                     <div class="form-group">
-                      <label for="eventSpace">Choose Mosque Space</label>
-                      <select name="eventSpace" id="eventSpace" class="form-control" placeholder="Choose Mosque Space" readonly>
-                        <option value="Prayer Hall">Prayer Hall</option>
-                        <option value="Closed Hall">Closed Hall</option>
-                        <option value="Meeting Room<">Meeting Room</option>
-                        <option value="Office">Office</option>
-                      </select>
+                      <label for="eventSpace">Mosque Space</label>
+                      <input name="eventSpace" type="text" class="form-control" id="eventSpace" value="<?php echo $event['spaceName']; ?>" readonly>
                     </div>
                     <div class="form-group">
                       <label for="spaceImage">Mosque Space Image</label>
                       <div id="carouselExampleControls" class="carousel slide" data-ride="carousel" style="background-color: rgba(0, 0, 0, 0.8); border: 2px solid #ccc; border-radius: 10px;">
                         <div class="carousel-inner text-center">
                           <div class="carousel-item active">
-                            <img src="../../images/logo-mbtho.png" class="d-block mx-auto" alt="...">
-                          </div>
-                          <div class="carousel-item">
-                            <img src="../../images/logo-mbtho.png" class="d-block mx-auto" alt="...">
-                          </div>
-                          <div class="carousel-item">
-                            <img src="../../images/logo-mbtho.png" class="d-block mx-auto" alt="...">
+                            <img src="<?php echo !empty($event['spacePicture']) ?
+                                        'data:image/jpeg;base64,' . $event['spacePicture'] :
+                                        '../../images/logo-mbtho.png'; ?>"
+                              class="img-fluid" style="max-height: 400px;">
                           </div>
                         </div>
                         <button class="carousel-control-prev" type="button" data-target="#carouselExampleControls" data-slide="prev">

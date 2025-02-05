@@ -1,7 +1,7 @@
 <?php
 session_start();
 if (!isset($_SESSION['userlogged']) || ($_SESSION['userlogged'] != 1)) {
-    header("Location: ../../index.php");
+    header("Location: ../index.php");
     exit();
 }
 
