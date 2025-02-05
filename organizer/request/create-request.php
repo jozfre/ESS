@@ -1,16 +1,83 @@
 <?php
 session_start();
-if(!isset($_SESSION['orglogged']) || ($_SESSION['orglogged'] != 1))
-{
+if (!isset($_SESSION['orglogged']) || ($_SESSION['orglogged'] != 1)) {
     header("Location: ../../index.php");
 }
 
-if(!isset($_SESSION['orgID']))
-{
+if (!isset($_SESSION['orgID'])) {
     header("Location: ../../php/logout.php");
 }
 
 include "../../php/dbconn.php";
+
+// SQL query to get all space
+$sqlSpace = "SELECT * FROM space where isDeleted = 0";
+$resultSpace = mysqli_query($conn, $sqlSpace);
+$rowSpace = mysqli_num_rows($resultSpace);
+
+$spaces = array();
+while ($row = mysqli_fetch_assoc($resultSpace)) {
+    $spaces[$row['spaceID']] = array(
+        'spaceName' => $row['spaceName'],
+        'spacePicture' => $row['spacePicture']
+    );
+}
+mysqli_data_seek($resultSpace, 0); // Reset result pointer
+
+if(isset($_POST['submit'])) {
+    // Get form data
+    $orgID = $_SESSION['orgID'];
+    $dateOfRequest = date('Y-m-d');
+    $applicantAddress = mysqli_real_escape_string($conn, trim($_POST['applicantAddress']));
+    $reqEventName = mysqli_real_escape_string($conn, trim($_POST['reqEventName']));
+    $reqEventType = mysqli_real_escape_string($conn, trim($_POST['reqEventType']));
+    $dateOfUse = mysqli_real_escape_string($conn, $_POST['dateOfUse']);
+    $periodOfUseStart = mysqli_real_escape_string($conn, $_POST['periodOfUseStart']);
+    $periodOfUseEnd = mysqli_real_escape_string($conn, $_POST['periodOfUseEnd']);
+    $purposeOfUse = mysqli_real_escape_string($conn, trim($_POST['purposeOfUse']));
+    $applicantSignature = mysqli_real_escape_string($conn, trim($_POST['applicantSignature']));
+    $spaceID = mysqli_real_escape_string($conn, $_POST['spaceID']);
+    
+    // Set defaults
+    $approvalStatus = NULL;
+    $approverDetails = NULL;
+    $isDeleted = 0;
+
+    $sql = "INSERT INTO request (dateOfRequest, applicantAddress, reqEventName, 
+            reqEventType, dateOfUse, periodOfUseStart, periodOfUseEnd, 
+            purposeOfUse, applicantSignature, approvalStatus, approverDetails, 
+            isDeleted, orgID, spaceID) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("sssssssssiiiii", 
+        $dateOfRequest,
+        $applicantAddress, 
+        $reqEventName,
+        $reqEventType,
+        $dateOfUse,
+        $periodOfUseStart,
+        $periodOfUseEnd,
+        $purposeOfUse,
+        $applicantSignature,
+        $approvalStatus,
+        $approverDetails,
+        $isDeleted,
+        $orgID,
+        $spaceID
+    );
+
+    if($stmt->execute()) {
+        $requestID = $stmt->insert_id; // Get the newly inserted request ID
+        $_SESSION['success'] = "Request created successfully";
+        header("Location: view-request.php?requestID=" . $requestID);
+        exit();
+    } else {
+        $error = "Error creating request: " . $conn->error;
+    }
+    $stmt->close();
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -69,7 +136,9 @@ include "../../php/dbconn.php";
                         <img src="../../images/user-icon.png" class="img-circle elevation-2" alt="User Image">
                     </div>
                     <div class="info">
-                        <a href="#" class="d-block text-truncate"><?php if(isset($_SESSION['orgName'])) { echo $_SESSION['orgName']; } ?></a>
+                        <a href="#" class="d-block text-truncate"><?php if (isset($_SESSION['orgName'])) {
+                                                                        echo $_SESSION['orgName'];
+                                                                    } ?></a>
                         <a href="#" class="d-block">ORGANIZER</a>
                     </div>
                 </div>
@@ -146,15 +215,15 @@ include "../../php/dbconn.php";
                                     <div class="card-body">
                                         <div class="form-group">
                                             <label for="dateOfRequest">Date of Request</label>
-                                            <input name="dateOfRequest" type="date" class="form-control" id="dateOfRequest" readonly>
+                                            <input name="dateOfRequest" type="date" class="form-control" id="dateOfRequest" value="<?php echo date('Y-m-d'); ?>" readonly>
                                         </div>
                                         <div class="form-group">
                                             <label for="orgName">Organizer Name</label>
-                                            <input name="orgName" type="text" class="form-control" id="orgName" readonly>
+                                            <input name="orgName" type="text" class="form-control" id="orgName" value="<?php echo $_SESSION['orgName'] ?>" readonly>
                                         </div>
                                         <div class="form-group">
                                             <label for="orgTelNum">Organizer Telephone Number</label>
-                                            <input name="orgTelNum" type="text" class="form-control" id="orgTelNum" pattern="[0-9]{10}" readonly>
+                                            <input name="orgTelNum" type="text" class="form-control" id="orgTelNum" pattern="[0-9]{10}" value="<?php echo $_SESSION['orgTelNum'] ?>" readonly>
                                         </div>
                                         <div class="form-group">
                                             <label for="applicantAddress">Organizer Address</label>
@@ -179,46 +248,32 @@ include "../../php/dbconn.php";
                                         </div>
                                         <div class="form-group">
                                             <label for="periodOfUse">Period of Use:</label><br>
-                                            <label for="periodOfUseBefore">Start Time</label>
-                                            <input name="periodOfUseBefore" type="time" class="form-control" id="periodOfUseBefore" placeholder="Please enter the period of use (start time) for the event" title="Please enter the period of use (start time) for the event" required><br>
-                                            <label for="periodOfUseAfter">End Time</label>
-                                            <input name="periodOfUseAfter" type="time" class="form-control" id="periodOfUseAfter" placeholder="Please enter the period of use (end time) for the event" title="Please enter the period of use (end time) for the event" required>
+                                            <label for="periodOfUseStart">Start Time</label>
+                                            <input name="periodOfUseStart" type="time" class="form-control" id="periodOfUseStart" placeholder="Please enter the period of use (start time) for the event" title="Please enter the period of use (start time) for the event" required><br>
+                                            <label for="periodOfUseEnd">End Time</label>
+                                            <input name="periodOfUseEnd" type="time" class="form-control" id="periodOfUseEnd" placeholder="Please enter the period of use (end time) for the event" title="Please enter the period of use (end time) for the event" required>
                                         </div>
                                         <div class="form-group">
                                             <label for="purposeOfUse">Purpose of Use</label>
                                             <input name="purposeOfUse" type="text" class="form-control" id="purposeOfUse" placeholder="Enter the purpose of the event" title="Please enter the purpose of the event" required>
                                         </div>
                                         <div class="form-group">
-                                            <label for="reqEventFacility">Choose Mosque Space</label>
-                                            <select name="reqEventFacility" id="reqEventFacility" class="form-control" placeholder="Choose Mosque Space" required>
-                                                <option value="Prayer Hall">Prayer Hall</option>
-                                                <option value="Closed Hall">Closed Hall</option>
-                                                <option value="Meeting Room<">Meeting Room</option>
-                                                <option value="Office">Office</option>
-                                            </select>
+                                            <label for="spaceID">Choose Mosque Space</label>
+                                            <?php if ($rowSpace > 0) { ?>
+                                                <select name="spaceID" id="spaceID" class="form-control" onchange="updateSpaceImage(this.value)" required>
+                                                    <?php foreach ($spaces as $spaceID => $space) { ?>
+                                                        <option value="<?php echo $spaceID; ?>"><?php echo $space['spaceName']; ?></option>
+                                                    <?php } ?>
+                                                </select>
+                                            <?php } else { ?>
+                                                <input name="spaceID" type="text" class="form-control" placeholder="No mosque space available" readonly>
+                                            <?php } ?>
                                         </div>
+
                                         <div class="form-group">
                                             <label for="spaceImage">Mosque Space Image</label>
-                                            <div id="carouselExampleControls" class="carousel slide" data-ride="carousel" style="background-color: rgba(0, 0, 0, 0.8); border: 2px solid #ccc; border-radius: 10px;">
-                                                <div class="carousel-inner text-center">
-                                                    <div class="carousel-item active">
-                                                        <img src="../../images/logo-mbtho.png" class="d-block mx-auto" alt="...">
-                                                    </div>
-                                                    <div class="carousel-item">
-                                                        <img src="../../images/logo-mbtho.png" class="d-block mx-auto" alt="...">
-                                                    </div>
-                                                    <div class="carousel-item">
-                                                        <img src="../../images/logo-mbtho.png" class="d-block mx-auto" alt="...">
-                                                    </div>
-                                                </div>
-                                                <button class="carousel-control-prev" type="button" data-target="#carouselExampleControls" data-slide="prev">
-                                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                                    <span class="sr-only">Previous</span>
-                                                </button>
-                                                <button class="carousel-control-next" type="button" data-target="#carouselExampleControls" data-slide="next">
-                                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                                    <span class="sr-only">Next</span>
-                                                </button>
+                                            <div id="spaceImageContainer" class="text-center" style="background-color: rgba(0, 0, 0, 0.8); border: 2px solid #ccc; border-radius: 10px;">
+                                                <img id="spaceImage" src="<?php echo !empty($firstSpace['spacePicture']) ? 'data:image/jpeg;base64,' . $firstSpace['spacePicture'] : '../../images/logo-mbtho.png'; ?>" class="d-block mx-auto" style="max-height: 500px; width: auto;" alt="Space Image">
                                             </div>
                                         </div>
                                         <div class="form-group">
@@ -271,10 +326,29 @@ include "../../php/dbconn.php";
     <!-- AdminLTE App -->
     <script src="../../dist/js/adminlte.min.js"></script>
     <!-- Page specific script -->
-<script>
-  $(function () {
-  bsCustomFileInput.init();
-});
-</script>
+    <script>
+        const spaces = <?php echo json_encode($spaces); ?>;
+
+        // Load first space image on page load
+        window.onload = function() {
+            const firstSpaceID = document.getElementById('spaceID').value;
+            updateSpaceImage(firstSpaceID);
+        }
+
+        function updateSpaceImage(spaceID) {
+            const imageElement = document.getElementById('spaceImage');
+            if (spaceID && spaces[spaceID] && spaces[spaceID].spacePicture) {
+                imageElement.src = 'data:image/jpeg;base64,' + spaces[spaceID].spacePicture;
+            } else {
+                imageElement.src = '../../images/logo-mbtho.png';
+            }
+        }
+    </script>
+    <script>
+        $(function() {
+            bsCustomFileInput.init();
+        });
+    </script>
 </body>
+
 </html>

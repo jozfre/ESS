@@ -11,7 +11,7 @@ if (!isset($_SESSION['orgID'])) {
 include "../../php/dbconn.php";
 
 //SQL Query to get all list of requests
-$sql = "SELECT * FROM request where isDeleted = 0";
+$sql = "SELECT * FROM request WHERE orgID = '" . $_SESSION['orgID'] . "' AND isDeleted = 0";
 $result = mysqli_query($conn, $sql);
 $row = mysqli_num_rows($result);
 
