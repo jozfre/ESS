@@ -176,7 +176,7 @@ if (isset($_GET['requestID'])) {
                                 <div class="card-header">
                                     <h3 class="card-title">Request Details</h3>
                                     <div class="d-flex justify-content-end">
-                                        <?php if ($request['approvalStatus'] == NULL): ?>
+                                        <?php if ($request['approvalStatus'] === NULL): ?>
                                             <button type="button" class="btn btn-danger btn-sm float-right mr-2" data-toggle="modal" data-target="#deleteModal"><i class="fas fa-window-close"></i> Cancel Request</button>
                                             <button type="button" class="btn btn-primary btn-sm float-right" onclick="location.href='update-request.php?requestID=<?php echo $request['requestID']; ?>'"><i class="fas fa-edit"></i> Update Details</button>
                                         <?php endif; ?>
@@ -213,7 +213,7 @@ if (isset($_GET['requestID'])) {
                                             ?>
                                             <input name="approvalStatus" type="text" class="form-control" id="approvalStatus" value="<?php echo $statusText; ?>" readonly>
                                         </div>
-                                        <?php if ($request['approvalStatus'] != NULL): ?>
+                                        <?php if ($request['approvalStatus'] !== NULL): ?>
                                             <div class="form-group">
                                                 <label for="approverDetails">Approver Details</label>
                                                 <input name="approverDetails" type="text" class="form-control" id="approverDetails" value="<?php echo $request['approverDetails']; ?>" readonly>

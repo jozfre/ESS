@@ -11,7 +11,10 @@ if (!isset($_SESSION['userID'])) {
 include "../../php/dbconn.php";
 
 //SQL Query to get all list of requests
-$sql = "SELECT * FROM request where isDeleted = 0";
+$sql = "SELECT r.*, o.orgName
+        FROM request r
+        JOIN organizer o ON r.orgID = o.orgID
+        WHERE isDeleted = 0";
 $result = mysqli_query($conn, $sql);
 $row = mysqli_num_rows($result);
 

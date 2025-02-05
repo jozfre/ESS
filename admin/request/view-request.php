@@ -1,16 +1,47 @@
 <?php
 session_start();
-if(!isset($_SESSION['userlogged']) || ($_SESSION['userlogged'] != 1))
-{
+if (!isset($_SESSION['userlogged']) || ($_SESSION['userlogged'] != 1)) {
     header("Location: ../../index.php");
 }
 
-if(!isset($_SESSION['userID']))
-{
+if (!isset($_SESSION['userID'])) {
     header("Location: ../../php/logout.php");
 }
 
 include "../../php/dbconn.php";
+
+// Get request details
+if (isset($_GET['requestID'])) {
+    $requestID = mysqli_real_escape_string($conn, $_GET['requestID']);
+
+    $sql = "SELECT r.*, s.spaceName, s.spacePicture, o.orgName, o.orgTelNum 
+            FROM request r
+            JOIN space s ON r.spaceID = s.spaceID
+            JOIN organizer o ON r.orgID = o.orgID
+            WHERE r.requestID = ? AND r.isDeleted = 0";
+
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $requestID);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        $request = $result->fetch_assoc();
+    } else {
+        die("Request not found");
+    }
+
+    // Assuming $space array already contains the row from database
+    if (!empty($request['spacePicture'])) {
+        $imageData = $request['spacePicture'];
+        $imgSrc = "data:image/jpeg;base64," . $imageData;
+    } else {
+        $imgSrc = "../../images/logo-mbtho.png"; // fallback image
+    }
+
+    $stmt->close();
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -69,7 +100,9 @@ include "../../php/dbconn.php";
                         <img src="../../images/user-icon.png" class="img-circle elevation-2" alt="User Image">
                     </div>
                     <div class="info">
-                        <a href="#" class="d-block text-truncate"><?php if(isset($_SESSION['name'])) { echo $_SESSION['name']; } ?></a>
+                        <a href="#" class="d-block text-truncate"><?php if (isset($_SESSION['name'])) {
+                                                                        echo $_SESSION['name'];
+                                                                    } ?></a>
                         <a href="#" class="d-block">ADMIN</a>
                     </div>
                 </div>
@@ -172,69 +205,98 @@ include "../../php/dbconn.php";
                                 <div class="card-header">
                                     <h3 class="card-title">Request Details</h3>
                                     <div class="d-flex justify-content-end">
-                                        <button type="button" class="btn btn-danger btn-sm float-right mr-2" data-toggle="modal" data-target="#deleteModal"><i class="fas fa-window-close"></i> Disapprove Request</button>
-                                        <button type="button" class="btn btn-success btn-sm float-right"><i class="fas fa-check-square"></i> Approve Request</button>
+                                        <?php if ($request['approvalStatus'] === NULL): ?>
+                                            <div class="float-right">
+                                                <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#disapproveModal">
+                                                    <i class="fas fa-window-close"></i> Disapprove Request
+                                                </button>
+                                                <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#approveModal">
+                                                    <i class="fas fa-check-square"></i> Approve Request
+                                                </button>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                                 <!-- /.card-header -->
                                 <!-- form start -->
-                                <form name="form" method="POST" action="create-request.php" enctype="multipart/form-data">
+                                <form>
                                     <div class="card-body">
                                         <div class="form-group">
                                             <label for="requestID">Request ID</label>
-                                            <input name="requestID" class="form-control" id="requestID" value="0001" readonly>
+                                            <input name="requestID" class="form-control" id="requestID" value="<?php echo $request['requestID']; ?>" readonly>
                                         </div>
                                         <div class="form-group">
                                             <label for="dateOfRequest">Date of Request</label>
-                                            <input name="dateOfRequest" type="date" class="form-control" id="dateOfRequest" readonly>
+                                            <input name="dateOfRequest" type="date" class="form-control" id="dateOfRequest" value="<?php echo $request['dateOfRequest']; ?>" readonly>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="approvalStatus">Approval Status</label>
+                                            <?php
+                                            $badgeClass = '';
+                                            $statusText = '';
+
+                                            if ($request['approvalStatus'] === NULL) {
+                                                $badgeClass = 'badge-secondary';
+                                                $statusText = 'To Be Reviewed';
+                                            } else if ($request['approvalStatus'] == 1) {
+                                                $badgeClass = 'badge-success';
+                                                $statusText = 'Approved';
+                                            } else {
+                                                $badgeClass = 'badge-danger';
+                                                $statusText = 'Not Approved';
+                                            }
+                                            ?>
+                                            <input name="approvalStatus" type="text" class="form-control" id="approvalStatus" value="<?php echo $statusText; ?>" readonly>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="approverDetails">Approver Details</label>
+                                            <?php if (!empty($request['approverDetails'])): ?>
+                                                <div class="form-control" style="white-space: pre-line;" readonly>
+                                                    <?php echo htmlspecialchars($request['approverDetails']); ?>
+                                                </div>
+                                            <?php else: ?>
+                                                <input class="form-control" value="No approver details available" readonly>
+                                            <?php endif; ?>
                                         </div>
                                         <div class="form-group">
                                             <label for="orgName">Organizer Name</label>
-                                            <input name="orgName" type="text" class="form-control" id="orgName" readonly>
+                                            <input name="orgName" type="text" class="form-control" id="orgName" value="<?php echo $request['orgName']; ?>" readonly>
                                         </div>
                                         <div class="form-group">
                                             <label for="orgTelNum">Organizer Telephone Number</label>
-                                            <input name="orgTelNum" type="text" class="form-control" id="orgTelNum" pattern="[0-9]{10}" readonly>
+                                            <input name="orgTelNum" type="text" class="form-control" id="orgTelNum" value="<?php echo $request['orgTelNum']; ?>" readonly>
                                         </div>
                                         <div class="form-group">
                                             <label for="applicantAddress">Organizer Address</label>
-                                            <input name="applicantAddress" type="text" class="form-control" id="applicantAddress" placeholder="Enter your correspondence address" title="Please enter your correspondence address" readonly>
+                                            <input name="applicantAddress" type="text" class="form-control" id="applicantAddress" placeholder="Enter your correspondence address" title="Please enter your correspondence address" value="<?php echo $request['applicantAddress']; ?>" readonly>
                                         </div>
                                         <div class="form-group">
                                             <label for="reqEventName">Request Event Name</label>
-                                            <input name="reqEventName" type="text" class="form-control" id="reqEventName" placeholder="Enter the request event name" title="Please enter the new request event name" readonly>
+                                            <input name="reqEventName" type="text" class="form-control" id="reqEventName" placeholder="Enter the request event name" title="Please enter the new request event name" value="<?php echo $request['reqEventName']; ?>" readonly>
                                         </div>
                                         <div class="form-group">
                                             <label for="reqEventType">Event Type</label>
-                                            <select name="reqEventType" id="reqEventType" class="form-control" placeholder="Choose Event Type" readonly>
-                                                <option value="Islamic Talks">Islamic Talks</option>
-                                                <option value="Wedding">Wedding</option>
-                                                <option value="Class">Class</option>
-                                                <option value="Others">Others</option>
-                                            </select>
+                                            <input name="reqEventType" type="text" class="form-control" id="reqEventType" placeholder="Enter the request event type" title="Please enter the new request event type" value="<?php echo $request['reqEventType']; ?>" readonly>
                                         </div>
                                         <div class="form-group">
                                             <label for="dateOfUse">Date of Use</label>
-                                            <input name="dateOfUse" type="date" class="form-control" id="dateOfUse" placeholder="Choose the date of use for the event" title="Please choose the date of use for the event" readonly>
+                                            <input name="dateOfUse" type="date" class="form-control" id="dateOfUse" placeholder="Choose the date of use for the event" title="Please choose the date of use for the event" value="<?php echo $request['dateOfUse']; ?>" readonly>
                                         </div>
                                         <div class="form-group">
                                             <label for="periodOfUse">Period of Use:</label><br>
                                             <label for="periodOfUseBefore">Start Time</label>
-                                            <input name="periodOfUseBefore" type="time" class="form-control" id="periodOfUseBefore" placeholder="Please enter the period of use (start time) for the event" title="Please enter the period of use (start time) for the event" readonly><br>
+                                            <input name="periodOfUseBefore" type="time" class="form-control" id="periodOfUseBefore" placeholder="Please enter the period of use (start time) for the event" title="Please enter the period of use (start time) for the event" value="<?php echo $request['periodOfUseStart']; ?>" readonly><br>
                                             <label for="periodOfUseAfter">End Time</label>
-                                            <input name="periodOfUseAfter" type="time" class="form-control" id="periodOfUseAfter" placeholder="Please enter the period of use (end time) for the event" title="Please enter the period of use (end time) for the event" readonly>
+                                            <input name="periodOfUseAfter" type="time" class="form-control" id="periodOfUseAfter" placeholder="Please enter the period of use (end time) for the event" title="Please enter the period of use (end time) for the event" value="<?php echo $request['periodOfUseEnd']; ?>" readonly>
                                         </div>
                                         <div class="form-group">
                                             <label for="purposeOfUse">Purpose of Use</label>
-                                            <input name="purposeOfUse" type="text" class="form-control" id="purposeOfUse" placeholder="Enter the purpose of the event" title="Please enter the purpose of the event" readonly>
+                                            <input name="purposeOfUse" type="text" class="form-control" id="purposeOfUse" placeholder="Enter the purpose of the event" title="Please enter the purpose of the event" value="<?php echo $request['purposeOfUse']; ?>" readonly>
                                         </div>
                                         <div class="form-group">
-                                            <label for="reqEventFacility">Choose Mosque Space</label>
-                                            <select name="reqEventFacility" id="reqEventFacility" class="form-control" placeholder="Choose Mosque Space" readonly>
-                                                <option value="Prayer Hall">Prayer Hall</option>
-                                                <option value="Closed Hall">Closed Hall</option>
-                                                <option value="Meeting Room<">Meeting Room</option>
-                                                <option value="Office">Office</option>
+                                            <label for="reqEventFacility">Mosque Space</label>
+                                            <select name="reqEventFacility" id="reqEventFacility" class="form-control" placeholder="Mosque Space" readonly>
+                                                <option value="<?php echo $request['spaceID']; ?>" selected><?php echo $request['spaceName']; ?></option>
                                             </select>
                                         </div>
                                         <div class="form-group">
@@ -242,13 +304,7 @@ include "../../php/dbconn.php";
                                             <div id="carouselExampleControls" class="carousel slide" data-ride="carousel" style="background-color: rgba(0, 0, 0, 0.8); border: 2px solid #ccc; border-radius: 10px;">
                                                 <div class="carousel-inner text-center">
                                                     <div class="carousel-item active">
-                                                        <img src="../../images/logo-mbtho.png" class="d-block mx-auto" alt="...">
-                                                    </div>
-                                                    <div class="carousel-item">
-                                                        <img src="../../images/logo-mbtho.png" class="d-block mx-auto" alt="...">
-                                                    </div>
-                                                    <div class="carousel-item">
-                                                        <img src="../../images/logo-mbtho.png" class="d-block mx-auto" alt="...">
+                                                        <img src="<?php echo $imgSrc; ?>" class="d-block mx-auto" alt="Space Image" style="max-height: 500px;">
                                                     </div>
                                                 </div>
                                                 <button class="carousel-control-prev" type="button" data-target="#carouselExampleControls" data-slide="prev">
@@ -263,7 +319,7 @@ include "../../php/dbconn.php";
                                         </div>
                                         <div class="form-group">
                                             <label for="applicantSignature">Applicant Signature</label>
-                                            <input name="applicantSignature" type="text" class="form-control" id="applicantSignature" placeholder="Enter the your full name for digital signature" title="Please enter your full name for digital signature" readonly>
+                                            <input name="applicantSignature" type="text" class="form-control" id="applicantSignature" placeholder="Enter the your full name for digital signature" title="Please enter your full name for digital signature" value="<?php echo $request['applicantSignature']; ?>" readonly>
                                         </div>
 
                                         <!-- /.card-body -->
@@ -309,6 +365,65 @@ include "../../php/dbconn.php";
     <script src="../../plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
     <!-- AdminLTE App -->
     <script src="../../dist/js/adminlte.min.js"></script>
+    <!-- Approve Modal -->
+    <div class="modal fade" id="approveModal" tabindex="-1" role="dialog" aria-labelledby="approveModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="approveModalLabel">Approve Request</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form action="../../php/approve-request.php" method="POST">
+                    <div class="modal-body">
+                        <input type="hidden" name="requestID" value="<?php echo $request['requestID']; ?>">
+                        <div class="form-group">
+                            <label>Assign Staff</label>
+                            <select name="staffID" class="form-control" required>
+                                <option value="">Select Staff</option>
+                                <?php
+                                $staffQuery = "SELECT userID, name FROM user WHERE isDeleted = 0";
+                                $staffResult = mysqli_query($conn, $staffQuery);
+                                while ($staff = mysqli_fetch_assoc($staffResult)) {
+                                    echo "<option value='" . $staff['userID'] . "'>" . $staff['name'] . "</option>";
+                                }
+                                ?>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="submit" name="approve" class="btn btn-success">Confirm Approval</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Disapprove Modal -->
+    <div class="modal fade" id="disapproveModal" tabindex="-1" role="dialog" aria-labelledby="disapproveModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="disapproveModalLabel">Disapprove Request</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form action="../../php/disapprove-request.php" method="POST">
+                    <div class="modal-body">
+                        <input type="hidden" name="requestID" value="<?php echo $request['requestID']; ?>">
+                        <p>Are you sure you want to disapprove this request?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="submit" name="disapprove" class="btn btn-danger">Confirm Disapproval</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
     <!-- Page specific script -->
     <script>
         $(function() {
