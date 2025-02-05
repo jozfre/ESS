@@ -19,6 +19,7 @@ if (isset($_POST['approve'])) {
     $approverTelNum = $_SESSION['telNum'];
     $approverDetails = "Approved by: " . $approverName . "\nContact: " . $approverTelNum;
 
+
     // Start transaction
     $conn->begin_transaction();
 
@@ -26,12 +27,13 @@ if (isset($_POST['approve'])) {
         // Update request status
         $sql = "UPDATE request SET 
                 approvalStatus = 1,
-                approverDetails = ?,
-                staffID = ?
+                approverDetails = ?
                 WHERE requestID = ?";
 
+        echo $sql . "<br>";
+
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sii", $approverDetails, $staffID, $requestID);
+        $stmt->bind_param("si", $approverDetails, $requestID);
         $stmt->execute();
 
         // Get request details
@@ -41,27 +43,30 @@ if (isset($_POST['approve'])) {
         $stmtRequest->execute();
         $request = $stmtRequest->get_result()->fetch_assoc();
 
+
         // Insert new event
         $sqlEvent = "INSERT INTO event (
             eventName, 
             eventType, 
             eventDate, 
             eventTimeStart, 
-            eventTimeEnd, 
+            eventTimeEnd,
+            eventDescription,
             isDeleted,
             assignedStaff,
             orgID,
             spaceID
-        ) VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?)";
+        ) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?)";
 
         $stmtEvent = $conn->prepare($sqlEvent);
         $stmtEvent->bind_param(
-            "sssssiii",
+            "ssssssiii",
             $request['reqEventName'],
             $request['reqEventType'],
             $request['dateOfUse'],
             $request['periodOfUseStart'],
             $request['periodOfUseEnd'],
+            $request['purposeOfUse'],
             $staffID,
             $request['orgID'],
             $request['spaceID']
@@ -77,8 +82,8 @@ if (isset($_POST['approve'])) {
         // Rollback on error
         $conn->rollback();
         $_SESSION['error'] = "Error: " . $e->getMessage();
-        header("Location: ../admin/request/view-request.php?requestID=" . $requestID);
+        echo $e->getMessage();
+        // header("Location: ../admin/request/view-request.php?requestID=" . $requestID);
     }
     exit();
 }
-?>

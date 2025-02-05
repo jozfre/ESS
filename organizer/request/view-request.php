@@ -216,7 +216,7 @@ if (isset($_GET['requestID'])) {
                                         <?php if ($request['approvalStatus'] !== NULL): ?>
                                             <div class="form-group">
                                                 <label for="approverDetails">Approver Details</label>
-                                                <input name="approverDetails" type="text" class="form-control" id="approverDetails" value="<?php echo $request['approverDetails']; ?>" readonly>
+                                                <Textarea name="approverDetails" class="form-control" style="resize: none;" id="approverDetails" readonly><?php echo $request['approverDetails']; ?></Textarea>
                                             </div>
                                         <?php endif; ?>
                                         <div class="form-group">
