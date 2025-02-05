@@ -1,16 +1,97 @@
 <?php
 session_start();
-if(!isset($_SESSION['userlogged']) || ($_SESSION['userlogged'] != 1))
-{
-    header("Location: ../../index.php");
-}
-
-if(!isset($_SESSION['userID']))
-{
-    header("Location: ../../php/logout.php");
+if (!isset($_SESSION['userlogged']) || ($_SESSION['userlogged'] != 1)) {
+  header("Location: ../../index.php");
 }
 
 include "../../php/dbconn.php";
+
+// Get spaces
+$sqlSpace = "SELECT * FROM space WHERE isDeleted = 0";
+$resultSpace = mysqli_query($conn, $sqlSpace);
+$rowSpace = mysqli_num_rows($resultSpace);
+
+$spaces = array();
+while ($row = mysqli_fetch_assoc($resultSpace)) {
+  $spaces[$row['spaceID']] = array(
+    'spaceName' => $row['spaceName'],
+    'spacePicture' => $row['spacePicture']
+  );
+}
+mysqli_data_seek($resultSpace, 0); // Reset result pointer
+
+// Get staff
+$sqlStaff = "SELECT * FROM user WHERE isDeleted = 0";
+$resultStaff = mysqli_query($conn, $sqlStaff);
+
+// Get event details
+if (isset($_GET['eventID'])) {
+  $eventID = mysqli_real_escape_string($conn, $_GET['eventID']);
+
+  $sql = "SELECT e.*, o.orgName, o.orgTelNum, s.spaceName, s.spacePicture, 
+            u.name as staffName, u.telNum as staffTelNum
+            FROM event e
+            LEFT JOIN organizer o ON e.orgID = o.orgID
+            LEFT JOIN space s ON e.spaceID = s.spaceID
+            LEFT JOIN user u ON e.assignedStaff = u.userID
+            WHERE e.eventID = ? AND e.isDeleted = 0";
+
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param("i", $eventID);
+  $stmt->execute();
+  $result = $stmt->get_result();
+
+  if ($result->num_rows > 0) {
+    $event = $result->fetch_assoc();
+  } else {
+    die("Event not found");
+  }
+  $stmt->close();
+}
+
+// Handle form submission
+if (isset($_POST['submit'])) {
+  $eventID = mysqli_real_escape_string($conn, $_POST['eventID']);
+  $eventName = mysqli_real_escape_string($conn, $_POST['eventName']);
+  $eventType = mysqli_real_escape_string($conn, $_POST['eventType']);
+  $eventDate = mysqli_real_escape_string($conn, $_POST['eventDate']);
+  $eventTimeStart = mysqli_real_escape_string($conn, $_POST['eventTimeStart']);
+  $eventTimeEnd = mysqli_real_escape_string($conn, $_POST['eventTimeEnd']);
+  $spaceID = mysqli_real_escape_string($conn, $_POST['spaceID']);
+  $assignedStaff = mysqli_real_escape_string($conn, $_POST['assignedStaff']);
+
+  $sql = "UPDATE event SET 
+            eventName = ?,
+            eventType = ?,
+            eventDate = ?,
+            eventTimeStart = ?,
+            eventTimeEnd = ?,
+            spaceID = ?,
+            assignedStaff = ?
+            WHERE eventID = ?";
+
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param(
+    "sssssiii",
+    $eventName,
+    $eventType,
+    $eventDate,
+    $eventTimeStart,
+    $eventTimeEnd,
+    $spaceID,
+    $assignedStaff,
+    $eventID
+  );
+
+  if ($stmt->execute()) {
+    $_SESSION['success'] = "Event updated successfully";
+    header("Location: view-event.php?eventID=" . $eventID);
+    exit();
+  } else {
+    $error = "Error updating event: " . $conn->error;
+  }
+  $stmt->close();
+}
 ?>
 
 <!DOCTYPE html>
@@ -69,7 +150,9 @@ include "../../php/dbconn.php";
             <img src="../../images/user-icon.png" class="img-circle elevation-2" alt="User Image">
           </div>
           <div class="info">
-            <a href="#" class="d-block text-truncate"><?php if(isset($_SESSION['name'])) { echo $_SESSION['name']; } ?></a>
+            <a href="#" class="d-block text-truncate"><?php if (isset($_SESSION['name'])) {
+                                                        echo $_SESSION['name'];
+                                                      } ?></a>
             <a href="#" class="d-block">ADMIN</a>
           </div>
         </div>
@@ -151,7 +234,7 @@ include "../../php/dbconn.php";
             <div class="col-sm-6">
               <ol class="breadcrumb float-sm-right">
                 <li class="breadcrumb-item"><a href="list-event.php">List of Events</a></li>
-                <li class="breadcrumb-item"><a href="view-event.php">View Event Details</a></li>
+                <li class="breadcrumb-item"><a href="view-event.php?eventID=<?php echo $event['eventID']; ?>">View Event Details</a></li>
                 <li class="breadcrumb-item active">Update Event Details</li>
               </ol>
             </div>
@@ -178,88 +261,84 @@ include "../../php/dbconn.php";
                   <div class="card-body">
                     <div class="form-group">
                       <label for="eventID">Event ID</label>
-                      <input name="eventID" class="form-control" id="eventID" value="0001" readonly>
+                      <input name="eventID" class="form-control" id="eventID" value="<?php echo $event['eventID']; ?>" readonly>
                     </div>
                     <div class="form-group">
                       <label for="orgName">Organizer Name</label>
-                      <input name="orgName" type="text" class="form-control" id="orgName" value="Anjuran MBTHO" readonly>
+                      <input name="orgName" type="text" class="form-control" id="orgName" value="<?php echo ($event['orgID']) ? $event['orgName'] : 'Anjuran MBTHO'; ?>" readonly>
                     </div>
                     <div class="form-group">
                       <label for="orgTelNum">Organizer Telephone Number</label>
-                      <input name="orgTelNum" type="text" class="form-control" id="orgTelNum" pattern="[0-9]{10}" value="01111467006" readonly>
-                    </div>
-                    <div class="form-group">
-                      <label for="orgAddress">Organizer Address</label>
-                      <input name="orgAddress" type="text" class="form-control" id="orgAddress" value="Persiaran Suadamai" readonly>
+                      <input name="orgTelNum" type="text" class="form-control" id="orgTelNum" value="<?php echo ($event['orgID']) ? $event['orgTelNum'] : '01111467006'; ?>" readonly>
                     </div>
                     <div class="form-group">
                       <label for="eventName">Event Name</label>
-                      <input name="eventName" type="text" class="form-control" id="eventName" placeholder="Enter the new event name" title="Please enter the new event name" required>
+                      <input name="eventName" type="text" class="form-control" id="eventName" placeholder="Enter the new event name" title="Please enter the new event name" value="<?php echo $event['eventName']; ?>" required>
                     </div>
                     <div class="form-group">
                       <label for="eventType">Event Type</label>
-                      <select name="eventType" id="eventType" class="form-control" placeholder="Choose Event Type" required>
-                        <option value="Islamic Talks">Islamic Talks</option>
-                        <option value="Nikah/Wedding">Nikah/Wedding</option>
-                        <option value="Class">Class</option>
-                        <option value="Others">Others</option>
+                      <select name="eventType" class="form-control" required>
+                        <option value="Islamic Talks" <?php echo ($event['eventType'] == 'Islamic Talks') ? 'selected' : ''; ?>>Islamic Talks</option>
+                        <option value="Nikah/Wedding" <?php echo ($event['eventType'] == 'Nikah/Wedding') ? 'selected' : ''; ?>>Nikah/Wedding</option>
+                        <option value="Class" <?php echo ($event['eventType'] == 'Class') ? 'selected' : ''; ?>>Class</option>
+                        <option value="Others" <?php echo ($event['eventType'] == 'Others') ? 'selected' : ''; ?>>Others</option>
                       </select>
                     </div>
                     <div class="form-group">
                       <label for="eventDate">Date</label>
-                      <input name="eventDate" type="date" class="form-control" id="eventDate" placeholder="Choose the date for the event" title="Please choose the date for the event" required>
+                      <input name="eventDate" type="date" class="form-control" id="eventDate" placeholder="Choose the date for the event" title="Please choose the date for the event" value="<?php echo $event['eventDate']; ?>" required>
                     </div>
                     <div class="form-group">
                       <label for="eventTime">Event Time:</label><br>
-                      <label for="eventStartTime">Start Time</label>
-                      <input name="eventStartTime" type="time" class="form-control" id="eventStartTime" placeholder="Please enter the start time for the event" title="Please enter the start time for the event" required><br>
+                      <label for="eventTimeStart">Start Time</label>
+                      <input name="eventTimeStart" type="time" class="form-control" id="eventTimeStart" placeholder="Please enter the start time for the event" title="Please enter the start time for the event" value="<?php echo $event['eventTimeStart']; ?>" required><br>
                       <label for="eventEndTime">End Time</label>
-                      <input name="eventEndTime" type="time" class="form-control" id="eventEndTime" placeholder="Please enter the end time for the event" title="Please enter the end time for the event" required>
+                      <input name="eventTimeEnd" type="time" class="form-control" id="eventTimeEnd" placeholder="Please enter the end time for the event" title="Please enter the end time for the event" value="<?php echo $event['eventTimeEnd']; ?>" required>
                     </div>
                     <div class="form-group">
                       <label for="eventDescription">Event Description</label>
-                      <input name="eventDescription" type="text" class="form-control" id="eventDescription" placeholder="Enter the description of the event" title="Please enter the description of the event" required>
+                      <input name="eventDescription" type="text" class="form-control" id="eventDescription" placeholder="Enter the description of the event" title="Please enter the description of the event" value="<?php echo $event['eventDescription']; ?>" required>
                     </div>
                     <div class="form-group">
-                      <label for="eventSpace">Choose Mosque Space</label>
-                      <select name="eventSpace" id="eventSpace" class="form-control" placeholder="Choose Mosque Space" required>
-                        <option value="Prayer Hall">Prayer Hall</option>
-                        <option value="Closed Hall">Closed Hall</option>
-                        <option value="Meeting Room<">Meeting Room</option>
-                        <option value="Office">Office</option>
-                      </select>
+                      <label for="reqEventFacility">Choose Mosque Space</label>
+                      <?php if ($rowSpace > 0) { ?>
+                        <select name="spaceID" id="reqEventFacility" class="form-control" onchange="updateSpaceImage(this.value)" required>
+                          <?php foreach ($spaces as $spaceID => $space) { ?>
+                            <option value="<?php echo $spaceID; ?>" <?php echo ($event['spaceID'] == $spaceID) ? 'selected' : ''; ?>>
+                              <?php echo $space['spaceName']; ?>
+                            </option>
+                          <?php } ?>
+                        </select>
+                      <?php } ?>
                     </div>
                     <div class="form-group">
                       <label for="spaceImage">Mosque Space Image</label>
-                      <div id="carouselExampleControls" class="carousel slide" data-ride="carousel" style="background-color: rgba(0, 0, 0, 0.8); border: 2px solid #ccc; border-radius: 10px;">
-                        <div class="carousel-inner text-center">
-                          <div class="carousel-item active">
-                            <img src="../../images/logo-mbtho.png" class="d-block mx-auto" alt="...">
-                          </div>
-                          <div class="carousel-item">
-                            <img src="../../images/logo-mbtho.png" class="d-block mx-auto" alt="...">
-                          </div>
-                          <div class="carousel-item">
-                            <img src="../../images/logo-mbtho.png" class="d-block mx-auto" alt="...">
-                          </div>
-                        </div>
-                        <button class="carousel-control-prev" type="button" data-target="#carouselExampleControls" data-slide="prev">
-                          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                          <span class="sr-only">Previous</span>
-                        </button>
-                        <button class="carousel-control-next" type="button" data-target="#carouselExampleControls" data-slide="next">
-                          <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                          <span class="sr-only">Next</span>
-                        </button>
+                      <div id="spaceImageContainer" class="text-center" style="background-color: rgba(0, 0, 0, 0.8); border: 2px solid #ccc; border-radius: 10px;">
+                        <img id="spaceImage" src="<?php
+                                                  echo !empty($spaces[$event['spaceID']]['spacePicture']) ?
+                                                    'data:image/jpeg;base64,' . $spaces[$event['spaceID']]['spacePicture'] :
+                                                    '../../images/logo-mbtho.png';
+                                                  ?>" class="d-block mx-auto" style="max-height: 500px; width: auto;" alt="Space Image">
                       </div>
                     </div>
-
-                    <!-- /.card-body -->
-
-                    <div class="card-footer d-flex justify-content-end">
-                      <button type="button" class="btn btn-secondary mr-2" onclick="location.href='list-event.php'">Back</button>
-                      <button type="submit" class="btn btn-primary" name="submit">Save Updated Details</button>
+                    <div class="form-group">
+                      <label>Assigned Staff</label>
+                      <select name="assignedStaff" class="form-control" required>
+                        <?php while ($staff = mysqli_fetch_assoc($resultStaff)) { ?>
+                          <option value="<?php echo $staff['userID']; ?>"
+                            <?php echo ($event['assignedStaff'] == $staff['userID']) ? 'selected' : ''; ?>>
+                            <?php echo $staff['name']; ?>
+                          </option>
+                        <?php } ?>
+                      </select>
                     </div>
+                  </div>
+                  <!-- /.card-body -->
+
+                  <div class="card-footer d-flex justify-content-end">
+                    <button type="button" class="btn btn-secondary mr-2" onclick="location.href='view-event.php?eventID=<?php echo $event['eventID']; ?>'">Back</button>
+                    <button type="submit" class="btn btn-primary" name="submit">Save Updated Details</button>
+                  </div>
                 </form>
               </div>
               <!-- /.card -->
@@ -299,6 +378,18 @@ include "../../php/dbconn.php";
   <!-- AdminLTE App -->
   <script src="../../dist/js/adminlte.min.js"></script>
   <!-- Page specific script -->
+  <script>
+    const spaces = <?php echo json_encode($spaces); ?>;
+
+    function updateSpaceImage(spaceID) {
+      const imageElement = document.getElementById('spaceImage');
+      if (spaceID && spaces[spaceID] && spaces[spaceID].spacePicture) {
+        imageElement.src = 'data:image/jpeg;base64,' + spaces[spaceID].spacePicture;
+      } else {
+        imageElement.src = '../../images/logo-mbtho.png';
+      }
+    }
+  </script>
   <script>
     $(function() {
       bsCustomFileInput.init();

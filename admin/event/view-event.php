@@ -210,15 +210,13 @@ if (isset($_GET['eventID'])) {
                     </div>
                     <div class="form-group">
                       <label for="orgName">Organizer Name</label>
-                      <input name="orgName" type="text" class="form-control" id="orgName" value="Anjuran MBTHO" readonly>
+                      <input name="orgName" type="text" class="form-control" id="orgName"
+                        value="<?php echo ($event['orgID']) ? $event['orgName'] : 'Anjuran MBTHO'; ?>" readonly>
                     </div>
                     <div class="form-group">
                       <label for="orgTelNum">Organizer Telephone Number</label>
-                      <input name="orgTelNum" type="text" class="form-control" id="orgTelNum" pattern="[0-9]{10}" value="01111467006" readonly>
-                    </div>
-                    <div class="form-group">
-                      <label for="orgAddress">Organizer Address</label>
-                      <input name="orgAddress" type="text" class="form-control" id="orgAddress" value="Persiaran Suadamai" readonly>
+                      <input name="orgTelNum" type="text" class="form-control" id="orgTelNum" pattern="[0-9]{10}"
+                        value="<?php echo ($event['orgID']) ? $event['orgTelNum'] : '01111467006'; ?>" readonly>
                     </div>
                     <div class="form-group">
                       <label for="eventName">Event Name</label>
@@ -267,6 +265,15 @@ if (isset($_GET['eventID'])) {
                           <span class="sr-only">Next</span>
                         </button>
                       </div>
+                    </div><br>
+                    <div class="form-group">
+                      <label for="assignedStaff">Assigned Staff Details</label><br>
+                      <label for="staffName">Staff Name</label>
+                      <input name="staffName" type="text" class="form-control" id="staffName"
+                        value="<?php echo $event['staffName']; ?>" readonly><br>
+                      <label for="staffContact">Staff Contact</label>
+                      <input name="staffContact" type="text" class="form-control" id="staffContact"
+                        value="<?php echo $event['staffTelNum']; ?>" readonly>
                     </div>
                     <!-- /.card-body -->
                     <div class="card-footer d-flex justify-content-between align-items-center">
@@ -310,24 +317,27 @@ if (isset($_GET['eventID'])) {
   <script src="../../plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
   <!-- AdminLTE App -->
   <script src="../../dist/js/adminlte.min.js"></script>
-  <!-- Deletion Modal -->
-  <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+ <!-- Add Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
     <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="deleteModalLabel">Delete Event</h5>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Event</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <form action="../../php/delete-event.php" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="eventID" value="<?php echo $event['eventID']; ?>">
+                    <p>Are you sure you want to delete this event?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" name="deleteEvent" class="btn btn-danger">Delete</button>
+                </div>
+            </form>
         </div>
-        <div class="modal-body">
-          Are you sure you want to delete the following event?
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Back</button>
-          <button type="button" class="btn btn-primary">Confirm</button>
-        </div>
-      </div>
     </div>
-  </div>
-  <!-- End of Deletion Modal -->
+</div>
 </body>
 
 </html>
