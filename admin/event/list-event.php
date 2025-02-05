@@ -1,16 +1,26 @@
 <?php
 session_start();
-if(!isset($_SESSION['userlogged']) || ($_SESSION['userlogged'] != 1))
-{
-    header("Location: ../../index.php");
+if (!isset($_SESSION['userlogged']) || ($_SESSION['userlogged'] != 1)) {
+  header("Location: ../../index.php");
 }
 
-if(!isset($_SESSION['userID']))
-{
-    header("Location: ../../php/logout.php");
+if (!isset($_SESSION['userID'])) {
+  header("Location: ../../php/logout.php");
 }
 
 include "../../php/dbconn.php";
+
+// SQL Query to get all events
+$sql = "SELECT e.*, o.orgName, s.spaceName, u.name as staffName
+        FROM event e
+        LEFT JOIN organizer o ON e.orgID = o.orgID
+        LEFT JOIN space s ON e.spaceID = s.spaceID
+        LEFT JOIN user u ON e.assignedStaff = u.userID
+        WHERE e.isDeleted = 0
+        ORDER BY e.eventDate ASC, e.eventTimeStart ASC";
+$result = mysqli_query($conn, $sql);
+$row = mysqli_num_rows($result);
+
 ?>
 
 <!DOCTYPE html>
@@ -69,7 +79,9 @@ include "../../php/dbconn.php";
             <img src="../../images/user-icon.png" class="img-circle elevation-2" alt="User Image">
           </div>
           <div class="info">
-            <a href="#" class="d-block text-truncate"><?php if(isset($_SESSION['name'])) { echo $_SESSION['name']; } ?></a>
+            <a href="#" class="d-block text-truncate"><?php if (isset($_SESSION['name'])) {
+                                                        echo $_SESSION['name'];
+                                                      } ?></a>
             <a href="#" class="d-block">ADMIN</a>
           </div>
         </div>
@@ -196,17 +208,28 @@ include "../../php/dbconn.php";
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td>Muhd Zaki</td>
-                        <td>Majlis Perkahwinan</td>
-                        <td>Nikah/Wedding</td>
-                        <td>2025-01-01</td>
-                        <td>10:00 A.M.</td>
-                        <td>12:00 P.M.</td>
-                        <td>
-                          <a href="view-event.php?token=<?php echo $user['token']; ?>" class="btn btn-info btnn-block btn-sm float-middle fas fa-eye"></a>
-                        </td>
-                      </tr>
+                      <?php if ($row > 0) {
+                        while ($event = mysqli_fetch_assoc($result)) { ?>
+                          <tr>
+                            <?php if($event['orgID'] === NULL): ?>
+                            <td>Anjuran MBTHO</td>
+                            <?php else: ?>
+                            <td><?php echo $event['orgName']; ?></td>
+                            <?php endif; ?>
+                            <td><?php echo $event['eventName']; ?></td>
+                  <td><?php echo $event['eventType']; ?></td>
+                            <td><?php echo date('d-m-Y', strtotime($event['eventDate'])); ?></td>
+                            <td><?php echo $event['eventTimeStart']; ?></td>
+                            <td><?php echo $event['eventTimeEnd']; ?></td>
+                            <td>
+                              <a href="view-event.php?eventID=<?php echo $event['eventID']; ?>"
+                                class="btn btn-info btn-sm">
+                                <i class="fas fa-eye"></i>
+                              </a>
+                            </td>
+                          </tr>
+                      <?php }
+                      } ?>
                     </tbody>
                     <tfoot>
                       <tr>
