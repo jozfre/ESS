@@ -58,7 +58,7 @@ if (isset($_POST['submit'])) {
 
   if (mysqli_query($conn, $sql)) {
     $_SESSION['success'] = "Space updated successfully";
-    header("Location: list-space.php");
+    header("Location: view-space.php?spaceID=" . $spaceID);
     exit();
   } else {
     $_SESSION['error'] = "Error: " . mysqli_error($conn);
