@@ -2,7 +2,7 @@
 session_start();
 include "dbconn.php";
 
-if (isset($_POST['delete'])) {
+if (isset($_POST['deleteSpace'])) {
   $spaceID = mysqli_real_escape_string($conn, $_POST['spaceID']);
 
   $sql = "UPDATE space SET isDeleted = 1 WHERE spaceID = ?";
@@ -18,3 +18,4 @@ if (isset($_POST['delete'])) {
   }
   exit();
 }
+?>
