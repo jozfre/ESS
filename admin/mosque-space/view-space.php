@@ -269,7 +269,7 @@ if (!empty($space['spacePicture'])) {
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-            <button type="submit" name="delete" class="btn btn-danger">Delete</button>
+            <button type="submit" name="deleteSpace" class="btn btn-danger">Delete</button>
           </div>
         </form>
       </div>
