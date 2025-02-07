@@ -30,7 +30,67 @@ while ($row = mysqli_fetch_assoc($resultSpace)) {
 }
 mysqli_data_seek($resultSpace, 0);
 
-// Handle form submission
+function checkEventConflicts($conn, $eventDate, $eventTimeStart, $eventTimeEnd, $spaceID) {
+  $conflicts = array();
+  
+  // Check for existing events in the same space and date/time
+  $sql = "SELECT eventName, eventDate, eventTimeStart, eventTimeEnd, spaceName 
+          FROM event e 
+          LEFT JOIN space s ON e.spaceID = s.spaceID 
+          WHERE e.isDeleted = 0 
+          AND e.spaceID = ? 
+          AND e.eventDate = ? 
+          AND ((e.eventTimeStart BETWEEN ? AND ?) 
+          OR (e.eventTimeEnd BETWEEN ? AND ?) 
+          OR (? BETWEEN e.eventTimeStart AND e.eventTimeEnd)
+          OR (? BETWEEN e.eventTimeStart AND e.eventTimeEnd))";
+          
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param("isssssss", 
+      $spaceID, 
+      $eventDate, 
+      $eventTimeStart, 
+      $eventTimeEnd,
+      $eventTimeStart, 
+      $eventTimeEnd,
+      $eventTimeStart,
+      $eventTimeEnd
+  );
+  
+  $stmt->execute();
+  $result = $stmt->get_result();
+  
+  if ($result->num_rows > 0) {
+      $conflictEvent = $result->fetch_assoc();
+      $conflicts[] = array(
+          'type' => 'reserve',
+          'message' => "Reserve conflict: Space is already booked for event '{$conflictEvent['eventName']}' on " . 
+                      date('d-m-Y', strtotime($conflictEvent['eventDate'])) . 
+                      " from {$conflictEvent['eventTimeStart']} to {$conflictEvent['eventTimeEnd']}"
+      );
+  }
+  
+  // Check if end time is after start time
+  if (strtotime($eventTimeEnd) <= strtotime($eventTimeStart)) {
+      $conflicts[] = array(
+          'type' => 'time',
+          'message' => "Time conflict: End time must be after start time"
+      );
+  }
+  
+  // Check if date is not in the past
+  if (strtotime($eventDate) < strtotime(date('Y-m-d'))) {
+      $conflicts[] = array(
+          'type' => 'date',
+          'message' => "Date conflict: Cannot create events in the past"
+      );
+  }
+  
+  $stmt->close();
+  return $conflicts;
+}
+
+// Update form submission handler:
 if (isset($_POST['submit'])) {
   $eventName = mysqli_real_escape_string($conn, trim($_POST['eventName']));
   $eventType = mysqli_real_escape_string($conn, $_POST['eventType']);
@@ -41,31 +101,42 @@ if (isset($_POST['submit'])) {
   $spaceID = mysqli_real_escape_string($conn, $_POST['spaceID']);
   $assignedStaff = mysqli_real_escape_string($conn, $_POST['assignedStaff']);
 
-  $sql = "INSERT INTO event (eventName, eventType, eventDate, eventTimeStart, 
-            eventTimeEnd, eventDescription, spaceID, assignedStaff, isDeleted) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)";
+  // Check for conflicts
+  $conflicts = checkEventConflicts($conn, $eventDate, $eventTimeStart, $eventTimeEnd, $spaceID);
 
-  $stmt = $conn->prepare($sql);
-  $stmt->bind_param(
-    "ssssssii",
-    $eventName,
-    $eventType,
-    $eventDate,
-    $eventTimeStart,
-    $eventTimeEnd,
-    $eventDescription,
-    $spaceID,
-    $assignedStaff
-  );
+  if (empty($conflicts)) {
+      $sql = "INSERT INTO event (eventName, eventType, eventDate, eventTimeStart, 
+              eventTimeEnd, eventDescription, spaceID, assignedStaff, isDeleted) 
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)";
 
-  if ($stmt->execute()) {
-    $_SESSION['success'] = "Event created successfully";
-    header("Location: list-event.php");
-    exit();
+      $stmt = $conn->prepare($sql);
+      $stmt->bind_param(
+          "ssssssii",
+          $eventName,
+          $eventType,
+          $eventDate,
+          $eventTimeStart,
+          $eventTimeEnd,
+          $eventDescription,
+          $spaceID,
+          $assignedStaff
+      );
+
+      if ($stmt->execute()) {
+          $_SESSION['success'] = "Event created successfully";
+          header("Location: list-event.php");
+          exit();
+      } else {
+          $error = "Error creating event: " . $conn->error;
+      }
+      $stmt->close();
   } else {
-    $error = "Error creating event: " . $conn->error;
+      // Display specific conflict errors
+      foreach ($conflicts as $conflict) {
+          $error = $conflict['message'];
+          break; // Show only first error
+      }
   }
-  $stmt->close();
 }
 
 ?>
@@ -226,6 +297,12 @@ if (isset($_POST['submit'])) {
             <!-- left column -->
             <div class="col-md-12">
               <!-- general form elements -->
+              <?php if (isset($error)): ?>
+                    <div class="alert alert-danger alert-dismissible fade show">
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                      <?php echo $error; ?>
+                    </div>
+                  <?php endif; ?>
               <div class="card card-primary">
                 <div class="card-header">
                   <h3 class="card-title">New Event Details Form</h3>
