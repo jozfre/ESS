@@ -220,7 +220,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                   </div>
                   <div class="form-group">
                     <label for="telNum">Telephone Number</label>
-                    <input name="telNum" class="form-control" id="telNum" value="<?= $user['telNum'];?>" required>
+                    <input name="telNum" class="form-control" id="telNum" pattern="[0-9]{10}|[0-9]{11}" value="<?= $user['telNum'];?>" required>
                   </div>
                   <div class="form-group">
                     <label for="email">Email</label>

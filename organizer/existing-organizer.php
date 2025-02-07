@@ -93,7 +93,7 @@ if (isset($_POST['accessOrg'])) {
         </div>
         <label for="orgTelNum" class="form-label">Telephone Number</label>
         <div class="input-group mb-3">
-          <input name="orgTelNum" id="orgTelNum" type="tel" class="form-control" placeholder="Enter your telephone number" pattern="[0-9]{10}" title="Please enter a valid telephone number">
+          <input name="orgTelNum" id="orgTelNum" type="tel" class="form-control" placeholder="Enter your telephone number" pattern="[0-9]{10}|[0-9]{11}"  title="Please enter a valid telephone number">
           <div class="input-group-append">
             <div class="input-group-text">
               <span class="fas fa-phone"></span>

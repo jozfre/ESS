@@ -15,7 +15,7 @@ $sql = "SELECT e.*, s.spaceName, u.orgName
         FROM event e
         LEFT JOIN space s ON e.spaceID = s.spaceID 
         LEFT JOIN organizer u ON e.orgID = u.orgID
-        WHERE e.orgID = '{$_SESSION['orgID']}'
+        WHERE e.isDeleted = 0
         ORDER BY e.eventDate ASC";
 
 $result = mysqli_query($conn, $sql);

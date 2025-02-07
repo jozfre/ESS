@@ -208,7 +208,7 @@ if(isset($_POST['submit'])) {
                     </div>
                     <div class="form-group">
                       <label for="telNum">Telephone Number</label>
-                      <input name="telNum" type="text" class="form-control" id="telNum" type="tel" placeholder="Enter new staff's telephone number" pattern="[0-9]{10}" title="Please enter a valid telephone number" required>
+                      <input name="telNum" type="text" class="form-control" id="telNum" type="tel" placeholder="Enter new staff's telephone number" pattern="[0-9]{10}|[0-9]{11}"  title="Please enter a valid telephone number" required>
                     </div>
                     <div class="form-group">
                       <label for="email">Email</label>
