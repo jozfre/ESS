@@ -123,8 +123,9 @@ if (isset($_POST['submit'])) {
       );
 
       if ($stmt->execute()) {
+          $eventID = $stmt->insert_id; // Get the newly inserted request ID
           $_SESSION['success'] = "Event created successfully";
-          header("Location: list-event.php");
+          header("Location: view-event.php?eventID=" . $eventID);
           exit();
       } else {
           $error = "Error creating event: " . $conn->error;
