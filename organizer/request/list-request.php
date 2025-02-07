@@ -11,7 +11,7 @@ if (!isset($_SESSION['orgID'])) {
 include "../../php/dbconn.php";
 
 //SQL Query to get all list of requests
-$sql = "SELECT * FROM request WHERE orgID = '" . $_SESSION['orgID'] . "' AND isDeleted = 0";
+$sql = "SELECT r.*, o.orgName FROM request r JOIN organizer o ON r.orgID = o.orgID WHERE isDeleted = 0 AND r.orgID = {$_SESSION['orgID']}";
 $result = mysqli_query($conn, $sql);
 $row = mysqli_num_rows($result);
 
@@ -152,7 +152,7 @@ $row = mysqli_num_rows($result);
                   <div class="d-flex justify-content-center mb-3">
                     <div class="btn-group" role="group" aria-label="Approval Status Filter">
                       <button type="button" class="btn btn-secondary filter-btn active" data-filter="All">All</button>
-                      <button type="button" class="btn btn-secondary filter-btn" data-filter="To Be Reviewed">Pending</button>
+                      <button type="button" class="btn btn-secondary filter-btn" data-filter="Pending">Pending</button>
                       <button type="button" class="btn btn-secondary filter-btn" data-filter="Approved">Approved</button>
                       <button type="button" class="btn btn-secondary filter-btn" data-filter="Not Approved">Not Approved</button>
                     </div>
@@ -167,13 +167,13 @@ $row = mysqli_num_rows($result);
                         <th>Action</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="requestTableBody">
                       <?php
-                      if ($row > 0) {
+                      function displayTableRows($result)
+                      {
                         while ($request = mysqli_fetch_assoc($result)) {
-                          // Define badge style based on approval status
                           $badgeClass = '';
-                          $statusText = '';
+                          $statusText = 'All';
 
                           if ($request['approvalStatus'] === NULL) {
                             $badgeClass = 'badge-secondary';
@@ -198,6 +198,11 @@ $row = mysqli_num_rows($result);
                       <?php
                         }
                       }
+
+                      // Initial display with all results
+                      if ($row > 0) {
+                        displayTableRows($result);
+                      }
                       ?>
                     </tbody>
                     <tfoot>
@@ -209,7 +214,6 @@ $row = mysqli_num_rows($result);
                         <th>Action</th>
                       </tr>
                     </tfoot>
-                  </table>
                 </div>
                 <!-- /.card-body -->
               </div>
@@ -264,6 +268,34 @@ $row = mysqli_num_rows($result);
         "info": true,
         "autoWidth": false,
         "responsive": true,
+      });
+    });
+  </script>
+  <script>
+    $(document).ready(function() {
+      $('.filter-btn').click(function() {
+        // Remove active class from all buttons and add to clicked button
+        $('.filter-btn').removeClass('active');
+        $(this).addClass('active');
+
+        // Get the filter value
+        var filter = $(this).data('filter');
+
+        // Clear existing table content
+        $('#requestTableBody').empty();
+
+        // Load filtered content dynamically
+        $.ajax({
+          url: 'fetch_requests.php', // Create a separate PHP file for fetching filtered data
+          type: 'POST',
+          data: {
+            filter: filter,
+            orgID: <?php echo $_SESSION['orgID']; ?> // Add orgID
+          },
+          success: function(response) {
+            $('#requestTableBody').html(response);
+          }
+        });
       });
     });
   </script>
