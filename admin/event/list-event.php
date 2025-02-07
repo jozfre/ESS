@@ -207,9 +207,12 @@ $row = mysqli_num_rows($result);
                         <th>Action</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      <?php if ($row > 0) {
-                        while ($event = mysqli_fetch_assoc($result)) { ?>
+                    <tbody id="eventTableBody">
+                      <?php
+                      function displayTableRows($result)
+                      {
+                        while ($event = mysqli_fetch_assoc($result)) {
+                      ?>
                           <tr>
                             <?php if($event['orgID'] === NULL): ?>
                             <td>Anjuran MBTHO</td>
@@ -217,7 +220,7 @@ $row = mysqli_num_rows($result);
                             <td><?php echo $event['orgName']; ?></td>
                             <?php endif; ?>
                             <td><?php echo $event['eventName']; ?></td>
-                  <td><?php echo $event['eventType']; ?></td>
+                            <td><?php echo $event['eventType']; ?></td>
                             <td><?php echo date('d-m-Y', strtotime($event['eventDate'])); ?></td>
                             <td><?php echo $event['eventTimeStart']; ?></td>
                             <td><?php echo $event['eventTimeEnd']; ?></td>
@@ -228,8 +231,15 @@ $row = mysqli_num_rows($result);
                               </a>
                             </td>
                           </tr>
-                      <?php }
-                      } ?>
+                      <?php
+                        }
+                      }
+
+                      // Initial display with all results
+                      if ($row > 0) {
+                        displayTableRows($result);
+                      }
+                      ?>
                     </tbody>
                     <tfoot>
                       <tr>
@@ -293,10 +303,37 @@ $row = mysqli_num_rows($result);
         "paging": true,
         "lengthChange": false,
         "searching": false,
-        "ordering": true,
+        "ordering": false,
         "info": true,
         "autoWidth": false,
         "responsive": true,
+      });
+    });
+    </script>
+  <script>
+    $(document).ready(function() {
+      $('.filter-btn').click(function() {
+        // Remove active class from all buttons and add to clicked button
+        $('.filter-btn').removeClass('active');
+        $(this).addClass('active');
+
+        // Get the filter value
+        var filter = $(this).data('filter');
+
+        // Clear existing table content
+        $('#eventTableBody').empty();
+
+        // Load filtered content dynamically
+        $.ajax({
+          url: 'fetch_events.php', // Create a separate PHP file for fetching filtered data
+          type: 'POST',
+          data: {
+            filter: filter
+          },
+          success: function(response) {
+            $('#eventTableBody').html(response);
+          }
+        });
       });
     });
   </script>
