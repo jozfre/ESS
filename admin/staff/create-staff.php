@@ -10,31 +10,49 @@ if (!isset($_SESSION['userID'])) {
 
 include "../../php/dbconn.php";
 
-if(isset($_POST['submit'])) {
+if (isset($_POST['submit'])) {
   $name = mysqli_real_escape_string($conn, trim($_POST['name']));
   $email = mysqli_real_escape_string($conn, trim($_POST['email']));
   $telNum = mysqli_real_escape_string($conn, trim($_POST['telNum']));
   $password = mysqli_real_escape_string($conn, $_POST['password']);
   $confirmPassword = mysqli_real_escape_string($conn, $_POST['confirmPassword']);
 
-  if($password === $confirmPassword) {
-      // Insert new user
-      $sql = "INSERT INTO user (name, email, telNum, password) VALUES (?, ?, ?, ?)";
-      $stmt = $conn->prepare($sql);
-      $stmt->bind_param("ssss", $name, $email, $telNum, $password);
-      
-      if($stmt->execute()) {
-          $_SESSION['success'] = "New user created successfully";
-          header("Location: list-staff.php");
-          exit();
-      } else {
-          $error = "Error creating user: " . $conn->error;
-      }
-      $stmt->close();
+  // Check for existing phone number
+  $checkSql = "SELECT telNum FROM user WHERE telNum = ? AND isDeleted = 0";
+  $checkStmt = $conn->prepare($checkSql);
+  $checkStmt->bind_param("s", $telNum);
+  $checkStmt->execute();
+  $checkResult = $checkStmt->get_result();
+
+  if ($checkResult->num_rows > 0) {
+    $error = "Phone number already exists";
+    $_SESSION['form_data'] = $_POST;
+  } else if ($password === $confirmPassword) {
+    // Insert new user
+    $sql = "INSERT INTO user (name, email, telNum, password) VALUES (?, ?, ?, ?)";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ssss", $name, $email, $telNum, $password);
+
+    if ($stmt->execute()) {
+      $userID = $conn->insert_id; // Get the ID of newly created staff
+      $_SESSION['success'] = "New staff created successfully";
+      header("Location: view-staff.php?userID=" . $userID);
+      exit();
+    } else {
+      $error = "Error creating user: " . $conn->error;
+      $_SESSION['form_data'] = $_POST;
+    }
+    $stmt->close();
   } else {
-      $error = "Passwords do not match";
+    $error = "Passwords do not match";
+    $_SESSION['form_data'] = $_POST;
   }
+  $checkStmt->close();
 }
+
+// Get form data if validation failed
+$formData = isset($_SESSION['form_data']) ? $_SESSION['form_data'] : array();
+unset($_SESSION['form_data']);
 
 ?>
 
@@ -53,7 +71,22 @@ if(isset($_POST['submit'])) {
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <!-- Theme style -->
   <link rel="stylesheet" href="../../dist/css/adminlte.css">
+  <!-- Add Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </head>
+
+<!-- Toasts container -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 11">
+  <div id="successToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body">
+        <i class="fas fa-check-circle me-2"></i>
+        <span id="toastMessage"></span>
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  </div>
+</div>
 
 <body class="hold-transition sidebar-mini">
   <div class="wrapper">
@@ -194,6 +227,12 @@ if(isset($_POST['submit'])) {
             <!-- left column -->
             <div class="col-md-12">
               <!-- general form elements -->
+              <?php if (isset($error)): ?>
+                <div class="alert alert-danger alert-dismissible fade show">
+                  <button type="button" class="close" data-dismiss="alert">&times;</button>
+                  <i class="fas fa-exclamation-circle"></i> <?php echo $error; ?>
+                </div>
+              <?php endif; ?>
               <div class="card card-success">
                 <div class="card-header">
                   <h3 class="card-title">New Staff Details Form</h3>
@@ -204,15 +243,15 @@ if(isset($_POST['submit'])) {
                   <div class="card-body">
                     <div class="form-group">
                       <label for="name">Staff Name</label>
-                      <input name="name" type="text" class="form-control" id="name" placeholder="Enter new staff's name" title="Please enter new staff's name" required>
+                      <input name="name" type="text" class="form-control" id="name" placeholder="Enter new staff's name" title="Please enter new staff's name" value="<?php echo isset($formData['name']) ? htmlspecialchars($formData['name']) : ''; ?>" required>
                     </div>
                     <div class="form-group">
                       <label for="telNum">Telephone Number</label>
-                      <input name="telNum" type="text" class="form-control" id="telNum" type="tel" placeholder="Enter new staff's telephone number" pattern="[0-9]{10}|[0-9]{11}"  title="Please enter a valid telephone number" required>
+                      <input name="telNum" type="text" class="form-control" id="telNum" type="tel" placeholder="Enter new staff's telephone number" pattern="[0-9]{10}|[0-9]{11}" title="Please enter a valid telephone number" value="<?php echo isset($formData['telNum']) ? htmlspecialchars($formData['telNum']) : ''; ?>" required>
                     </div>
                     <div class="form-group">
                       <label for="email">Email</label>
-                      <input name="email" type="email" class="form-control" id="email" placeholder="Enter new staff's email" title="Please enter new staff's email" required>
+                      <input name="email" type="email" class="form-control" id="email" placeholder="Enter new staff's email" title="Please enter new staff's email" value="<?php echo isset($formData['email']) ? htmlspecialchars($formData['email']) : ''; ?>" required>
                     </div>
                     <div class="form-group">
                       <label for="password">Password</label>

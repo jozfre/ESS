@@ -25,18 +25,18 @@ if (isset($_GET['userID'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-  $name = mysqli_real_escape_string($conn, trim($_POST['name']));
-  $email = mysqli_real_escape_string($conn, trim($_POST['email']));
-  $telNum = mysqli_real_escape_string($conn, trim($_POST['telNum']));
+  $name = mysqli_real_escape_string($conn, trim(trim($_POST['name'])));
+  $email = mysqli_real_escape_string($conn, trim(trim($_POST['email'])));
+  $telNum = mysqli_real_escape_string($conn, trim(trim($_POST['telNum'])));
   $password = mysqli_real_escape_string($conn, $_POST['password']);
   $confirmPassword = mysqli_real_escape_string($conn, $_POST['confirmPassword']);
 
   if ($password === $confirmPassword) {
     $sql = "UPDATE user SET name='$name', email='$email', telNum='$telNum', password='$password' WHERE userID='$userID'";
     if (mysqli_query($conn, $sql)) {
-      $_SESSION['update_success'] = true;
+      $_SESSION['success'] = "Staff details updated successfully";;
       $_SESSION['name'] = $name;
-      header("Location: view-staff.php?userID=$userID");
+      header("Location: view-staff.php?userID=" . $userID);
       exit();
     } else {
       echo "Error updating record: " . mysqli_error($conn);

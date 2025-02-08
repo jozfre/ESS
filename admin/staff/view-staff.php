@@ -22,20 +22,20 @@ if (isset($_GET['userID'])) {
   }
 }
 
-if(isset($_POST['submit'])) {
+if (isset($_POST['submit'])) {
   $userID = mysqli_real_escape_string($conn, $_GET['userID']);
-  
+
   // SQL for soft delete
   $sql = "UPDATE user SET isDeleted = 1 WHERE userID = ?";
   $stmt = $conn->prepare($sql);
   $stmt->bind_param("i", $userID);
-  
-  if($stmt->execute()) {
-      $_SESSION['delete_success'] = true;
-      header("Location: ../../php/logout.php");
-      exit();
+
+  if ($stmt->execute()) {
+    $_SESSION['delete_success'] = true;
+    header("Location: ../../php/logout.php");
+    exit();
   } else {
-      $error = "Error deleting user: " . $conn->error;
+    $error = "Error deleting user: " . $conn->error;
   }
   $stmt->close();
 }
@@ -198,6 +198,13 @@ if(isset($_POST['submit'])) {
             <!-- left column -->
             <div class="col-md-12">
               <!-- general form elements -->
+              <?php if (isset($_SESSION['success'])): ?>
+                <div class="alert alert-success alert-dismissible fade show" id="successAlert">
+                  <button type="button" class="close" data-dismiss="alert">&times;</button>
+                  <i class="fas fa-check-circle"></i> <?php echo $_SESSION['success']; ?>
+                </div>
+              <?php unset($_SESSION['success']);
+              endif; ?>
               <div class="card card-dark">
                 <div class="card-header">
                   <h3 class="card-title">Staff Details</h3>
@@ -255,7 +262,7 @@ if(isset($_POST['submit'])) {
 
   <!-- Deletion Modal -->
   <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-    <form id="deleteForm" method="post" action="view-staff.php?userID=<?php echo $userID; ?>" >
+    <form id="deleteForm" method="post" action="view-staff.php?userID=<?php echo $userID; ?>">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
@@ -285,6 +292,16 @@ if(isset($_POST['submit'])) {
   <!-- AdminLTE App -->
   <script src="../../dist/js/adminlte.min.js"></script>
   <!-- Page specific script -->
+  <script>
+    $(document).ready(function() {
+      // Auto dismiss alert after 3 seconds
+      if ($('#successAlert').length > 0) {
+        setTimeout(function() {
+          $("#successAlert").fadeOut('slow');
+        }, 3000);
+      }
+    });
+  </script>
   <script>
     $(function() {
       bsCustomFileInput.init();
