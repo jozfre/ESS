@@ -10,6 +10,11 @@ if (!isset($_SESSION['userID'])) {
 
 include "../../php/dbconn.php";
 
+if (isset($_SESSION['error'])) {
+    $error = $_SESSION['error'];
+    unset($_SESSION['error']); // Clear the error from session
+}
+
 // Get request details
 if (isset($_GET['requestID'])) {
     $requestID = mysqli_real_escape_string($conn, $_GET['requestID']);
@@ -201,6 +206,12 @@ if (isset($_GET['requestID'])) {
                         <!-- left column -->
                         <div class="col-md-12">
                             <!-- general form elements -->
+                            <?php if (isset($error)): ?>
+                                <div class="alert alert-danger alert-dismissible fade show">
+                                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                                    <?php echo $error; ?>
+                                </div>
+                            <?php endif; ?>
                             <div class="card card-dark">
                                 <div class="card-header">
                                     <h3 class="card-title">Request Details</h3>
