@@ -158,7 +158,7 @@ if (isset($_GET['requestID'])) {
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="list-staff.php" class="nav-link">
+                            <a href="../staff/list-staff.php" class="nav-link">
                                 <i class="nav-icon far fa-address-card"></i>
                                 <p>
                                     Staff
