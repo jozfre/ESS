@@ -6,6 +6,24 @@ if (!isset($_SESSION['userlogged']) || ($_SESSION['userlogged'] != 1)) {
 
 include "../../php/dbconn.php";
 
+// Initialize event data with defaults at the top of file
+$event = array(
+    'eventID' => null,
+    'orgID' => null,
+    'orgName' => 'Anjuran MBTHO',
+    'orgTelNum' => '01111467006',
+    'eventName' => '',
+    'eventType' => '',
+    'eventDate' => '',
+    'eventTimeStart' => '',
+    'eventTimeEnd' => '',
+    'eventDescription' => '',
+    'spaceID' => '',
+    'assignedStaff' => '',
+    'spaceName' => '',
+    'spacePicture' => ''
+);
+
 // Get spaces
 $sqlSpace = "SELECT * FROM space WHERE isDeleted = 0";
 $resultSpace = mysqli_query($conn, $sqlSpace);
@@ -26,9 +44,12 @@ $resultStaff = mysqli_query($conn, $sqlStaff);
 
 // Get event details
 if (isset($_GET['eventID'])) {
-  $eventID = mysqli_real_escape_string($conn, $_GET['eventID']);
-
-  $sql = "SELECT e.*, o.orgName, o.orgTelNum, s.spaceName, s.spacePicture, 
+    $eventID = mysqli_real_escape_string($conn, $_GET['eventID']);
+    
+    $sql = "SELECT e.*, 
+            COALESCE(o.orgName, 'Anjuran MBTHO') as orgName,
+            COALESCE(o.orgTelNum, '01111467006') as orgTelNum,
+            s.spaceName, s.spacePicture, 
             u.name as staffName, u.telNum as staffTelNum
             FROM event e
             LEFT JOIN organizer o ON e.orgID = o.orgID
@@ -36,61 +57,155 @@ if (isset($_GET['eventID'])) {
             LEFT JOIN user u ON e.assignedStaff = u.userID
             WHERE e.eventID = ? AND e.isDeleted = 0";
 
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $eventID);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        $eventData = $result->fetch_assoc();
+        // Merge with defaults, preserving default values for missing keys
+        $event = array_merge($event, $eventData);
+    } else {
+        $_SESSION['error'] = "Event not found";
+        header("Location: list-event.php");
+        exit();
+    }
+    $stmt->close();
+}
+
+// Handle form data if validation failed
+if (isset($_SESSION['form_data'])) {
+    $formData = $_SESSION['form_data'];
+    unset($_SESSION['form_data']);
+    // Merge while preserving original event data for unchanged fields
+    foreach ($formData as $key => $value) {
+        if (!empty($value) || $key == 'orgID') { // Special handling for orgID
+            $event[$key] = $value;
+        }
+    }
+}
+
+function checkUpdateConflicts($conn, $eventID, $eventDate, $eventTimeStart, $eventTimeEnd, $spaceID)
+{
+  $conflicts = array();
+
+  // Check conflicts excluding current event
+  $sql = "SELECT eventName, eventDate, eventTimeStart, eventTimeEnd, spaceName 
+            FROM event e 
+            LEFT JOIN space s ON e.spaceID = s.spaceID 
+            WHERE e.isDeleted = 0 
+            AND e.eventID != ? 
+            AND e.spaceID = ? 
+            AND e.eventDate = ? 
+            AND ((e.eventTimeStart BETWEEN ? AND ?) 
+            OR (e.eventTimeEnd BETWEEN ? AND ?) 
+            OR (? BETWEEN e.eventTimeStart AND e.eventTimeEnd)
+            OR (? BETWEEN e.eventTimeStart AND e.eventTimeEnd))";
+
   $stmt = $conn->prepare($sql);
-  $stmt->bind_param("i", $eventID);
+  $stmt->bind_param(
+    "iisssssss",
+    $eventID,
+    $spaceID,
+    $eventDate,
+    $eventTimeStart,
+    $eventTimeEnd,
+    $eventTimeStart,
+    $eventTimeEnd,
+    $eventTimeStart,
+    $eventTimeEnd
+  );
+
   $stmt->execute();
   $result = $stmt->get_result();
 
   if ($result->num_rows > 0) {
-    $event = $result->fetch_assoc();
-  } else {
-    die("Event not found");
+    $conflictEvent = $result->fetch_assoc();
+    $conflicts[] = array(
+      'type' => 'booking',
+      'message' => "Space Conflict: Already booked for '{$conflictEvent['eventName']}' on " .
+        date('d-m-Y', strtotime($conflictEvent['eventDate'])) .
+        " ({$conflictEvent['eventTimeStart']} - {$conflictEvent['eventTimeEnd']})"
+    );
   }
+
+  if (strtotime($eventTimeEnd) <= strtotime($eventTimeStart)) {
+    $conflicts[] = array(
+      'type' => 'time',
+      'message' => "Time Conflict: End time must be after start time"
+    );
+  }
+
+  if (strtotime($eventDate) < strtotime(date('Y-m-d'))) {
+    $conflicts[] = array(
+      'type' => 'date',
+      'message' => "Date Conflict: Cannot schedule events in the past"
+    );
+  }
+
   $stmt->close();
+  return $conflicts;
 }
 
 // Handle form submission
 if (isset($_POST['submit'])) {
+  $_SESSION['form_data'] = $_POST;
+
   $eventID = mysqli_real_escape_string($conn, $_POST['eventID']);
+  $orgName = mysqli_real_escape_string($conn, $_POST['orgName']);
+  $orgTelNum = mysqli_real_escape_string($conn, $_POST['orgTelNum']);
   $eventName = mysqli_real_escape_string($conn, $_POST['eventName']);
   $eventType = mysqli_real_escape_string($conn, $_POST['eventType']);
   $eventDate = mysqli_real_escape_string($conn, $_POST['eventDate']);
   $eventTimeStart = mysqli_real_escape_string($conn, $_POST['eventTimeStart']);
   $eventTimeEnd = mysqli_real_escape_string($conn, $_POST['eventTimeEnd']);
+  $eventDescription = mysqli_real_escape_string($conn, $_POST['eventDescription']);
   $spaceID = mysqli_real_escape_string($conn, $_POST['spaceID']);
   $assignedStaff = mysqli_real_escape_string($conn, $_POST['assignedStaff']);
 
-  $sql = "UPDATE event SET 
-            eventName = ?,
-            eventType = ?,
-            eventDate = ?,
-            eventTimeStart = ?,
-            eventTimeEnd = ?,
-            spaceID = ?,
-            assignedStaff = ?
-            WHERE eventID = ?";
+  // Check for conflicts
+  $conflicts = checkUpdateConflicts($conn, $eventID, $eventDate, $eventTimeStart, $eventTimeEnd, $spaceID);
 
-  $stmt = $conn->prepare($sql);
-  $stmt->bind_param(
-    "sssssiii",
-    $eventName,
-    $eventType,
-    $eventDate,
-    $eventTimeStart,
-    $eventTimeEnd,
-    $spaceID,
-    $assignedStaff,
-    $eventID
-  );
+  if (empty($conflicts)) {
+    $sql = "UPDATE event SET 
+                eventName = ?,
+                eventType = ?,
+                eventDate = ?,
+                eventTimeStart = ?,
+                eventTimeEnd = ?,
+                eventDescription = ?,
+                spaceID = ?,
+                assignedStaff = ?
+                WHERE eventID = ?";
 
-  if ($stmt->execute()) {
-    $_SESSION['success'] = "Event updated successfully";
-    header("Location: view-event.php?eventID=" . $eventID);
-    exit();
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param(
+      "ssssssiis",
+      $eventName,
+      $eventType,
+      $eventDate,
+      $eventTimeStart,
+      $eventTimeEnd,
+      $eventDescription,
+      $spaceID,
+      $assignedStaff,
+      $eventID
+    );
+
+    if ($stmt->execute()) {
+      $_SESSION['success'] = "Event updated successfully";
+      header("Location: view-event.php?eventID=" . $eventID);
+      exit();
+    } else {
+      $error = "Error updating event: " . $conn->error;
+    }
+    $stmt->close();
   } else {
-    $error = "Error updating event: " . $conn->error;
+    $error = $conflicts[0]['message'];
+    // Keep form data for redisplay
+    $event = $_POST;
   }
-  $stmt->close();
 }
 ?>
 
@@ -251,6 +366,12 @@ if (isset($_POST['submit'])) {
             <!-- left column -->
             <div class="col-md-12">
               <!-- general form elements -->
+              <?php if (isset($error)): ?>
+                <div class="alert alert-danger alert-dismissible fade show">
+                  <button type="button" class="close" data-dismiss="alert">&times;</button>
+                  <?php echo $error; ?>
+                </div>
+              <?php endif; ?>
               <div class="card card-info">
                 <div class="card-header">
                   <h3 class="card-title">Update Event Details</h3>
@@ -265,11 +386,11 @@ if (isset($_POST['submit'])) {
                     </div>
                     <div class="form-group">
                       <label for="orgName">Organizer Name</label>
-                      <input name="orgName" type="text" class="form-control" id="orgName" value="<?php echo ($event['orgID']) ? $event['orgName'] : 'Anjuran MBTHO'; ?>" readonly>
+                        <input name="orgName" type="text" class="form-control" id="orgName" value="<?php echo $event['orgID'] === NULL ? 'Anjuran MBTHO' : htmlspecialchars($event['orgName']); ?>" readonly>
                     </div>
                     <div class="form-group">
                       <label for="orgTelNum">Organizer Telephone Number</label>
-                      <input name="orgTelNum" type="text" class="form-control" id="orgTelNum" value="<?php echo ($event['orgID']) ? $event['orgTelNum'] : '01111467006'; ?>" readonly>
+                      <input name="orgTelNum" type="text" class="form-control" id="orgTelNum" value="<?php echo $event['orgID'] === NULL ? '01111467006' : htmlspecialchars($event['orgTelNum']); ?>" readonly>
                     </div>
                     <div class="form-group">
                       <label for="eventName">Event Name</label>
