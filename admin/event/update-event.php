@@ -123,8 +123,8 @@ function checkUpdateConflicts($conn, $eventID, $eventDate, $eventTimeStart, $eve
   if ($result->num_rows > 0) {
     $conflictEvent = $result->fetch_assoc();
     $conflicts[] = array(
-      'type' => 'booking',
-      'message' => "Space Conflict: Already booked for '{$conflictEvent['eventName']}' on " .
+      'type' => 'reserve',
+      'message' => "Space Conflict: Space is already scheduled for '{$conflictEvent['eventName']}' on " .
         date('d-m-Y', strtotime($conflictEvent['eventDate'])) .
         " ({$conflictEvent['eventTimeStart']} - {$conflictEvent['eventTimeEnd']})"
     );

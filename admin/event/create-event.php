@@ -64,7 +64,7 @@ function checkEventConflicts($conn, $eventDate, $eventTimeStart, $eventTimeEnd, 
       $conflictEvent = $result->fetch_assoc();
       $conflicts[] = array(
           'type' => 'reserve',
-          'message' => "Reserve conflict: Space is already booked for event '{$conflictEvent['eventName']}' on " . 
+          'message' => "Schedule conflict: Space is already scheduled for event '{$conflictEvent['eventName']}' on " . 
                       date('d-m-Y', strtotime($conflictEvent['eventDate'])) . 
                       " from {$conflictEvent['eventTimeStart']} to {$conflictEvent['eventTimeEnd']}"
       );
