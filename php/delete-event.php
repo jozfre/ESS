@@ -16,7 +16,7 @@ if(isset($_POST['deleteEvent'])) {
     $stmt->bind_param("i", $eventID);
     
     if($stmt->execute()) {
-        $_SESSION['success'] = "Event deleted successfully";
+        $_SESSION['success_delete'] = "Event deleted successfully";
         header("Location: ../admin/event/list-event.php");
     } else {
         $_SESSION['error'] = "Error deleting event: " . $conn->error;

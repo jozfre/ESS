@@ -192,6 +192,13 @@ if (isset($_GET['eventID'])) {
             <!-- left column -->
             <div class="col-md-12">
               <!-- general form elements -->
+              <?php if (isset($_SESSION['success'])): ?>
+                <div class="alert alert-success alert-dismissible fade show" id="successAlert">
+                  <button type="button" class="close" data-dismiss="alert">&times;</button>
+                  <i class="fas fa-check-circle"></i> <?php echo $_SESSION['success']; ?>
+                </div>
+              <?php unset($_SESSION['success']);
+              endif; ?>
               <div class="card card-dark">
                 <div class="card-header">
                   <h3 class="card-title">Event Details</h3>
@@ -317,6 +324,16 @@ if (isset($_GET['eventID'])) {
   <script src="../../plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
   <!-- AdminLTE App -->
   <script src="../../dist/js/adminlte.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      // Auto dismiss alert after 3 seconds
+      if ($('#successAlert').length > 0) {
+        setTimeout(function() {
+          $("#successAlert").fadeOut('slow');
+        }, 3000);
+      }
+    });
+  </script>
  <!-- Add Delete Modal -->
 <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
     <div class="modal-dialog">

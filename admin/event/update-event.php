@@ -155,12 +155,12 @@ if (isset($_POST['submit'])) {
   $eventID = mysqli_real_escape_string($conn, $_POST['eventID']);
   $orgName = mysqli_real_escape_string($conn, $_POST['orgName']);
   $orgTelNum = mysqli_real_escape_string($conn, $_POST['orgTelNum']);
-  $eventName = mysqli_real_escape_string($conn, $_POST['eventName']);
+  $eventName = mysqli_real_escape_string($conn, trim($_POST['eventName']));
   $eventType = mysqli_real_escape_string($conn, $_POST['eventType']);
   $eventDate = mysqli_real_escape_string($conn, $_POST['eventDate']);
   $eventTimeStart = mysqli_real_escape_string($conn, $_POST['eventTimeStart']);
   $eventTimeEnd = mysqli_real_escape_string($conn, $_POST['eventTimeEnd']);
-  $eventDescription = mysqli_real_escape_string($conn, $_POST['eventDescription']);
+  $eventDescription = mysqli_real_escape_string($conn, trim($_POST['eventDescription']));
   $spaceID = mysqli_real_escape_string($conn, $_POST['spaceID']);
   $assignedStaff = mysqli_real_escape_string($conn, $_POST['assignedStaff']);
 
@@ -194,7 +194,7 @@ if (isset($_POST['submit'])) {
     );
 
     if ($stmt->execute()) {
-      $_SESSION['success'] = "Event updated successfully";
+      $_SESSION['success'] = "Event details updated successfully";
       header("Location: view-event.php?eventID=" . $eventID);
       exit();
     } else {
