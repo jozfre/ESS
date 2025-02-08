@@ -181,6 +181,13 @@ $row = mysqli_num_rows($result);
                 </div>
                 <!-- /.card-header -->
                 <div class="card-body">
+                  <?php if (isset($_SESSION['success_delete'])): ?>
+                    <div class="alert alert-danger alert-dismissible fade show" id="successAlert">
+                      <button type="button" class="close" data-dismiss="alert">&times;</button>
+                      <i class="fas fa-trash-alt"></i> <?php echo $_SESSION['success_delete']; ?>
+                    </div>
+                  <?php unset($_SESSION['success_delete']);
+                  endif; ?>
                   <table id="example2" class="table table-bordered table-hover">
                     <thead>
                       <tr>
@@ -259,6 +266,16 @@ $row = mysqli_num_rows($result);
   <!-- AdminLTE App -->
   <script src="../../dist/js/adminlte.min.js"></script>
   <!-- Page specific script -->
+  <script>
+    $(document).ready(function() {
+      // Auto dismiss alert after 3 seconds
+      if ($('#successAlert').length > 0) {
+        setTimeout(function() {
+          $("#successAlert").fadeOut('slow');
+        }, 3000);
+      }
+    });
+  </script>
   <script>
     $(function() {
       $("#example1").DataTable({

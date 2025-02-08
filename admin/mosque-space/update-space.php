@@ -57,7 +57,7 @@ if (isset($_POST['submit'])) {
   }
 
   if (mysqli_query($conn, $sql)) {
-    $_SESSION['success'] = "Space updated successfully";
+    $_SESSION['success'] = "Space details updated successfully";
     header("Location: view-space.php?spaceID=" . $spaceID);
     exit();
   } else {
@@ -252,6 +252,7 @@ if (isset($_POST['submit'])) {
                         <option value="Closed Hall" <?= ($space['spaceType'] == 'Closed Hall') ? 'selected' : ''; ?>>Closed Hall</option>
                         <option value="Meeting Room" <?= ($space['spaceType'] == 'Meeting Room') ? 'selected' : ''; ?>>Meeting Room</option>
                         <option value="Office" <?= ($space['spaceType'] == 'Office') ? 'selected' : ''; ?>>Office</option>
+                        <option value="Others" <?= ($space['spaceType'] == 'Others') ? 'selected' : ''; ?>>Office</option>
                       </select>
                     </div>
                     <div class="form-group">

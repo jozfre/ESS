@@ -32,8 +32,9 @@ if (isset($_POST['submit'])) {
             VALUES ('$spaceName', '$spaceCapacity', '$spaceType', '$imageBase64')";
 
     if (mysqli_query($conn, $sql)) {
-      $_SESSION['success'] = "Space added successfully";
-      header("Location: list-space.php");
+      $spaceID = $conn->insert_id; // Get the ID of newly created staff
+      $_SESSION['success'] = "New space added successfully";
+      header("Location: view-space.php?spaceID=" . $spaceID);
       exit();
     } else {
       $_SESSION['error'] = "Error: " . mysqli_error($conn);
@@ -227,6 +228,7 @@ if (isset($_POST['submit'])) {
                         <option value="Closed Hall">Closed Hall</option>
                         <option value="Meeting Room">Meeting Room</option>
                         <option value="Office">Office</option>
+                        <option value="Others">Others</option>
                       </select>
                     </div>
                     <div class="form-group">

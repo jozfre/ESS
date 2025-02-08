@@ -10,7 +10,7 @@ if (isset($_POST['deleteSpace'])) {
   mysqli_stmt_bind_param($stmt, "s", $spaceID);
 
   if (mysqli_stmt_execute($stmt)) {
-    $_SESSION['success'] = "Space deleted successfully";
+    $_SESSION['success_delete'] = "Space deleted successfully";
     header("Location: ../admin/mosque-space/list-space.php");
   } else {
     $_SESSION['error'] = "Error deleting space: " . mysqli_error($conn);
