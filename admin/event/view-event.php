@@ -203,8 +203,19 @@ if (isset($_GET['eventID'])) {
                 <div class="card-header">
                   <h3 class="card-title">Event Details</h3>
                   <div class="d-flex justify-content-end">
-                    <button type="button" class="btn btn-danger btn-sm float-right mr-2" data-toggle="modal" data-target="#deleteModal"><i class="fas fa-trash-alt"></i> Delete Event</button>
-                    <button type="button" class="btn btn-primary btn-sm float-right" onclick="location.href='update-event.php?eventID=<?php echo $event['eventID']; ?>'"><i class="fas fa-edit"></i> Update Details</button>
+                    <?php
+                    $eventDate = strtotime($event['eventDate']);
+                    $currentDate = strtotime(date('Y-m-d'));
+
+                    if ($eventDate > $currentDate):
+                    ?>
+                      <button type="button" class="btn btn-danger btn-sm float-right mr-2" data-toggle="modal" data-target="#deleteModal">
+                        <i class="fas fa-trash-alt"></i> Delete Event
+                      </button>
+                      <button type="button" class="btn btn-primary btn-sm float-right" onclick="location.href='update-event.php?eventID=<?php echo $event['eventID']; ?>'">
+                        <i class="fas fa-edit"></i> Update Details
+                      </button>
+                    <?php endif; ?>
                   </div>
                 </div>
                 <!-- /.card-header -->
@@ -334,27 +345,27 @@ if (isset($_GET['eventID'])) {
       }
     });
   </script>
- <!-- Add Delete Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
+  <!-- Add Delete Modal -->
+  <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
     <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Delete Event</h5>
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-            </div>
-            <form action="../../php/delete-event.php" method="POST">
-                <div class="modal-body">
-                    <input type="hidden" name="eventID" value="<?php echo $event['eventID']; ?>">
-                    <p>Are you sure you want to delete this event?</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    <button type="submit" name="deleteEvent" class="btn btn-danger">Delete</button>
-                </div>
-            </form>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Delete Event</h5>
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
         </div>
+        <form action="../../php/delete-event.php" method="POST">
+          <div class="modal-body">
+            <input type="hidden" name="eventID" value="<?php echo $event['eventID']; ?>">
+            <p>Are you sure you want to delete this event?</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+            <button type="submit" name="deleteEvent" class="btn btn-danger">Delete</button>
+          </div>
+        </form>
+      </div>
     </div>
-</div>
+  </div>
 </body>
 
 </html>
