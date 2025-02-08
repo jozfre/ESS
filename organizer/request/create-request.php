@@ -10,6 +10,66 @@ if (!isset($_SESSION['orgID'])) {
 
 include "../../php/dbconn.php";
 
+function checkRequestConflicts($conn, $dateOfUse, $periodOfUseStart, $periodOfUseEnd, $spaceID) {
+    $conflicts = array();
+    
+    // Check for existing events in the same space and date/time
+    $sql = "SELECT eventName, eventDate, eventTimeStart, eventTimeEnd, spaceName 
+            FROM event e 
+            LEFT JOIN space s ON e.spaceID = s.spaceID 
+            WHERE e.isDeleted = 0 
+            AND e.spaceID = ? 
+            AND e.eventDate = ? 
+            AND ((e.eventTimeStart BETWEEN ? AND ?) 
+            OR (e.eventTimeEnd BETWEEN ? AND ?) 
+            OR (? BETWEEN e.eventTimeStart AND e.eventTimeEnd)
+            OR (? BETWEEN e.eventTimeStart AND e.eventTimeEnd))";
+            
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("isssssss", 
+        $spaceID, 
+        $dateOfUse, 
+        $periodOfUseStart, 
+        $periodOfUseEnd,
+        $periodOfUseStart, 
+        $periodOfUseEnd,
+        $periodOfUseStart,
+        $periodOfUseEnd
+    );
+    
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        $conflictEvent = $result->fetch_assoc();
+        $conflicts[] = array(
+            'type' => 'reserve',
+            'message' => "Space Conflict: '{$conflictEvent['spaceName']}' is already scheduled for event '{$conflictEvent['eventName']}' on " . 
+                        date('d-m-Y', strtotime($conflictEvent['eventDate'])) . 
+                        " from {$conflictEvent['eventTimeStart']} to {$conflictEvent['eventTimeEnd']}"
+        );
+    }
+    
+    // Check if end time is after start time
+    if (strtotime($periodOfUseEnd) <= strtotime($periodOfUseStart)) {
+        $conflicts[] = array(
+            'type' => 'time',
+            'message' => "Time Conflict: End time must be after start time"
+        );
+    }
+    
+    // Check if date is not in the past
+    if (strtotime($dateOfUse) < strtotime(date('Y-m-d'))) {
+        $conflicts[] = array(
+            'type' => 'date',
+            'message' => "Date Conflict: Cannot create requests for past dates"
+        );
+    }
+    
+    $stmt->close();
+    return $conflicts;
+}
+
 // SQL query to get all space
 $sqlSpace = "SELECT * FROM space where isDeleted = 0";
 $resultSpace = mysqli_query($conn, $sqlSpace);
@@ -43,39 +103,49 @@ if(isset($_POST['submit'])) {
     $approverDetails = NULL;
     $isDeleted = 0;
 
-    $sql = "INSERT INTO request (dateOfRequest, applicantAddress, reqEventName, 
+    // Check for conflicts
+    $conflicts = checkRequestConflicts($conn, $dateOfUse, $periodOfUseStart, $periodOfUseEnd, $spaceID);
+
+    if (empty($conflicts)) {
+        $sql = "INSERT INTO request (dateOfRequest, applicantAddress, reqEventName, 
             reqEventType, dateOfUse, periodOfUseStart, periodOfUseEnd, 
             purposeOfUse, applicantSignature, approvalStatus, approverDetails, 
             isDeleted, orgID, spaceID) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sssssssssiiiii", 
-        $dateOfRequest,
-        $applicantAddress, 
-        $reqEventName,
-        $reqEventType,
-        $dateOfUse,
-        $periodOfUseStart,
-        $periodOfUseEnd,
-        $purposeOfUse,
-        $applicantSignature,
-        $approvalStatus,
-        $approverDetails,
-        $isDeleted,
-        $orgID,
-        $spaceID
-    );
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("sssssssssiiiii", 
+            $dateOfRequest,
+            $applicantAddress, 
+            $reqEventName,
+            $reqEventType,
+            $dateOfUse,
+            $periodOfUseStart,
+            $periodOfUseEnd,
+            $purposeOfUse,
+            $applicantSignature,
+            $approvalStatus,
+            $approverDetails,
+            $isDeleted,
+            $orgID,
+            $spaceID
+        );
 
-    if($stmt->execute()) {
-        $requestID = $stmt->insert_id; // Get the newly inserted request ID
-        $_SESSION['success'] = "Request created successfully";
-        header("Location: view-request.php?requestID=" . $requestID);
-        exit();
+        if($stmt->execute()) {
+            $requestID = $stmt->insert_id; // Get the newly inserted request ID
+            $_SESSION['success'] = "Request created successfully";
+            header("Location: view-request.php?requestID=" . $requestID);
+            exit();
+        } else {
+            $error = "Error creating request: " . $conn->error;
+        }
+        $stmt->close();
     } else {
-        $error = "Error creating request: " . $conn->error;
+        // Store form data in session for redisplay
+        $_SESSION['form_data'] = $_POST;
+        // Get first conflict message
+        $error = $conflicts[0]['message'];
     }
-    $stmt->close();
 }
 
 ?>
@@ -205,6 +275,13 @@ if(isset($_POST['submit'])) {
                         <!-- left column -->
                         <div class="col-md-12">
                             <!-- general form elements -->
+                              <!-- Add after form starts -->
+                              <?php if (isset($error)): ?>
+                                        <div class="alert alert-danger alert-dismissible fade show">
+                                            <button type="button" class="close" data-dismiss="alert">&times;</button>
+                                            <?php echo $error; ?>
+                                        </div>
+                                    <?php endif; ?>
                             <div class="card card-primary">
                                 <div class="card-header">
                                     <h3 class="card-title">New Event Request Details Form</h3>

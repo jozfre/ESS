@@ -10,6 +10,26 @@ if (!isset($_SESSION['orgID'])) {
 
 include "../../php/dbconn.php";
 
+// Initialize request array with defaults
+$request = array(
+    'requestID' => '',
+    'orgID' => '',
+    'orgName' => '',
+    'orgTelNum' => '',
+    'applicantAddress' => '',
+    'reqEventName' => '',
+    'reqEventType' => '',
+    'dateOfUse' => '',
+    'periodOfUseStart' => '',
+    'periodOfUseEnd' => '',
+    'purposeOfUse' => '',
+    'reqEventFacility' => '',
+    'spaceID' => '',
+    'spaceImage' => '',
+    'applicantSignature' => ''
+);
+
+
 // SQL query to get all space
 $sqlSpace = "SELECT * FROM space where isDeleted = 0";
 $resultSpace = mysqli_query($conn, $sqlSpace);
@@ -24,53 +44,166 @@ while ($row = mysqli_fetch_assoc($resultSpace)) {
 }
 mysqli_data_seek($resultSpace, 0); // Reset result pointer
 
+// Get request details
 if (isset($_GET['requestID'])) {
     $requestID = mysqli_real_escape_string($conn, $_GET['requestID']);
-    $sql = "SELECT r.*, s.spaceName, s.spacePicture, o.orgName, o.orgTelNum 
+    
+    $sql = "SELECT r.*, o.orgName, o.orgTelNum, s.spaceName, s.spacePicture 
             FROM request r
-            JOIN space s ON r.spaceID = s.spaceID
-            JOIN organizer o ON r.orgID = o.orgID
-            WHERE r.requestID = '$requestID' AND r.isDeleted = 0";;
-    $result = mysqli_query($conn, $sql);
-    if (mysqli_num_rows($result) > 0) {
-        $request = mysqli_fetch_assoc($result);
+            LEFT JOIN organizer o ON r.orgID = o.orgID
+            LEFT JOIN space s ON r.spaceID = s.spaceID
+            WHERE r.requestID = ? AND r.isDeleted = 0";
+            
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $requestID);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        $requestData = $result->fetch_assoc();
+        $request = array_merge($request, $requestData);
     } else {
-        die(mysqli_error($conn));
+        $_SESSION['error'] = "Request not found";
+        header("Location: list-request.php");
+        exit();
     }
+    $stmt->close();
+}
+
+// Handle form data if validation failed
+if (isset($_SESSION['form_data'])) {
+    $formData = $_SESSION['form_data'];
+    unset($_SESSION['form_data']);
+    // Merge while preserving original request data
+    foreach ($formData as $key => $value) {
+        if (!empty($value)) {
+            $request[$key] = $value;
+        }
+    }
+}
+
+// Add after database connection:
+function checkRequestUpdateConflicts($conn, $requestID, $dateOfUse, $periodOfUseStart, $periodOfUseEnd, $spaceID)
+{
+    $conflicts = array();
+
+    // Check for existing events in the same space and date/time
+    $sql = "SELECT eventName, eventDate, eventTimeStart, eventTimeEnd, spaceName 
+            FROM event e 
+            LEFT JOIN space s ON e.spaceID = s.spaceID 
+            WHERE e.isDeleted = 0 
+            AND e.spaceID = ? 
+            AND e.eventDate = ? 
+            AND ((e.eventTimeStart BETWEEN ? AND ?) 
+            OR (e.eventTimeEnd BETWEEN ? AND ?) 
+            OR (? BETWEEN e.eventTimeStart AND e.eventTimeEnd)
+            OR (? BETWEEN e.eventTimeStart AND e.eventTimeEnd))";
+
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param(
+        "isssssss",
+        $spaceID,
+        $dateOfUse,
+        $periodOfUseStart,
+        $periodOfUseEnd,
+        $periodOfUseStart,
+        $periodOfUseEnd,
+        $periodOfUseStart,
+        $periodOfUseEnd
+    );
+
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        $conflictEvent = $result->fetch_assoc();
+        $conflicts[] = array(
+            'type' => 'reserve',
+            'message' => "Space Conflict: Space already scheduled for event '{$conflictEvent['eventName']}' on " .
+                date('d-m-Y', strtotime($conflictEvent['eventDate'])) .
+                " ({$conflictEvent['eventTimeStart']} - {$conflictEvent['eventTimeEnd']})"
+        );
+    }
+
+    // Validate time
+    if (strtotime($periodOfUseEnd) <= strtotime($periodOfUseStart)) {
+        $conflicts[] = array(
+            'type' => 'time',
+            'message' => "Time Conflict: End time must be after start time"
+        );
+    }
+
+    // Validate date
+    if (strtotime($dateOfUse) < strtotime(date('Y-m-d'))) {
+        $conflicts[] = array(
+            'type' => 'date',
+            'message' => "Date Conflict: Cannot schedule for past dates"
+        );
+    }
+
+    $stmt->close();
+    return $conflicts;
 }
 
 // Add after session checks
 if (isset($_POST['submit'])) {
+    $_SESSION['form_data'] = $_POST;
+
     $requestID = mysqli_real_escape_string($conn, $_POST['requestID']);
-    $dateOfRequest =  mysqli_real_escape_string($conn, $_POST['dateOfRequest']);
+    $dateOfRequest = mysqli_real_escape_string($conn, $_POST['dateOfRequest']);
     $applicantAddress = mysqli_real_escape_string($conn, trim($_POST['applicantAddress']));
     $reqEventName = mysqli_real_escape_string($conn, trim($_POST['reqEventName']));
     $reqEventType = mysqli_real_escape_string($conn, $_POST['reqEventType']);
     $dateOfUse = mysqli_real_escape_string($conn, $_POST['dateOfUse']);
-    $periodOfUseBefore = mysqli_real_escape_string($conn, $_POST['periodOfUseBefore']);
-    $periodOfUseAfter = mysqli_real_escape_string($conn, $_POST['periodOfUseAfter']);
+    $periodOfUseStart = mysqli_real_escape_string($conn, $_POST['periodOfUseStart']);
+    $periodOfUseEnd = mysqli_real_escape_string($conn, $_POST['periodOfUseEnd']);
     $purposeOfUse = mysqli_real_escape_string($conn, trim($_POST['purposeOfUse']));
     $spaceID = mysqli_real_escape_string($conn, $_POST['spaceID']);
 
-    $sql = "UPDATE request 
-            SET applicantAddress = '$applicantAddress', reqEventName = '$reqEventName', reqEventType = '$reqEventType', dateOfUse = '$dateOfUse', periodOfUseStart = '$periodOfUseBefore', periodOfUseEnd = '$periodOfUseAfter', purposeOfUse = '$purposeOfUse', spaceID = '$spaceID'
-            WHERE requestID = '$requestID'";
+    // Check for conflicts
+    $conflicts = checkRequestUpdateConflicts($conn, $requestID, $dateOfUse, $periodOfUseStart, $periodOfUseEnd, $spaceID);
 
+    if (empty($conflicts)) {
+        $sql = "UPDATE request SET 
+                applicantAddress = ?,
+                reqEventName = ?,
+                reqEventType = ?,
+                dateOfUse = ?,
+                periodOfUseStart = ?,
+                periodOfUseEnd = ?,
+                purposeOfUse = ?,
+                spaceID = ?
+                WHERE requestID = ?";
 
-    if (mysqli_query($conn, $sql)) {
-        $_SESSION['success'] = "Space updated successfully";
-        header("Location: view-request.php?requestID=" . $requestID);
-        exit();
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param(
+            "ssssssssi",
+            $applicantAddress,
+            $reqEventName,
+            $reqEventType,
+            $dateOfUse,
+            $periodOfUseStart,
+            $periodOfUseEnd,
+            $purposeOfUse,
+            $spaceID,
+            $requestID
+        );
+
+        if ($stmt->execute()) {
+            $_SESSION['success'] = "Request updated successfully";
+            header("Location: view-request.php?requestID=" . $requestID);
+            exit();
+        } else {
+            $error = "Error updating request: " . $conn->error;
+        }
+        $stmt->close();
     } else {
-        $_SESSION['error'] = "Error: " . mysqli_error($conn);
-        header("Location: update-request.php?requestID=" . $requestID);
-        exit();
+        $error = $conflicts[0]['message'];
+        $request = $_POST;
     }
 }
 
 ?>
-
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -201,6 +334,13 @@ if (isset($_POST['submit'])) {
                         <!-- left column -->
                         <div class="col-md-12">
                             <!-- general form elements -->
+                            <!-- Add after form starts -->
+                            <?php if (isset($error)): ?>
+                                <div class="alert alert-danger alert-dismissible fade show">
+                                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                                    <?php echo $error; ?>
+                                </div>
+                            <?php endif; ?>
                             <div class="card card-info">
                                 <div class="card-header">
                                     <h3 class="card-title">Update Request Details</h3>
@@ -248,10 +388,10 @@ if (isset($_POST['submit'])) {
                                         </div>
                                         <div class="form-group">
                                             <label for="periodOfUse">Period of Use:</label><br>
-                                            <label for="periodOfUseBefore">Start Time</label>
-                                            <input name="periodOfUseBefore" type="time" class="form-control" id="periodOfUseBefore" placeholder="Please enter the period of use (start time) for the event" title="Please enter the period of use (start time) for the event" value="<?php echo $request['periodOfUseStart']; ?>" required><br>
-                                            <label for="periodOfUseAfter">End Time</label>
-                                            <input name="periodOfUseAfter" type="time" class="form-control" id="periodOfUseAfter" placeholder="Please enter the period of use (end time) for the event" title="Please enter the period of use (end time) for the event" value="<?php echo $request['periodOfUseEnd']; ?>" required>
+                                            <label for="periodOfUseStart">Start Time</label>
+                                            <input name="periodOfUseStart" type="time" class="form-control" id="periodOfUseStart" placeholder="Please enter the period of use (start time) for the event" title="Please enter the period of use (start time) for the event" value="<?php echo $request['periodOfUseStart']; ?>" required><br>
+                                            <label for="periodOfUseEnd">End Time</label>
+                                            <input name="periodOfUseEnd" type="time" class="form-control" id="periodOfUseEnd" placeholder="Please enter the period of use (end time) for the event" title="Please enter the period of use (end time) for the event" value="<?php echo $request['periodOfUseEnd']; ?>" required>
                                         </div>
                                         <div class="form-group">
                                             <label for="purposeOfUse">Purpose of Use</label>
