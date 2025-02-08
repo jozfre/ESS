@@ -190,7 +190,7 @@ if (isset($_POST['submit'])) {
         );
 
         if ($stmt->execute()) {
-            $_SESSION['success'] = "Request updated successfully";
+            $_SESSION['success'] = "Event request details updated successfully";
             header("Location: view-request.php?requestID=" . $requestID);
             exit();
         } else {
@@ -338,7 +338,7 @@ if (isset($_POST['submit'])) {
                             <?php if (isset($error)): ?>
                                 <div class="alert alert-danger alert-dismissible fade show">
                                     <button type="button" class="close" data-dismiss="alert">&times;</button>
-                                    <?php echo $error; ?>
+                                    <i class="fas fa-exclamation-circle"></i><?php echo $error; ?>
                                 </div>
                             <?php endif; ?>
                             <div class="card card-info">

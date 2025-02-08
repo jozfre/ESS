@@ -28,7 +28,7 @@ if (isset($_POST['disapprove'])) {
     $stmt->bind_param("si", $approverDetails, $requestID);
 
     if ($stmt->execute()) {
-        $_SESSION['success'] = "Request disapproved";
+        $_SESSION['disapprove'] = "Request disapproved";
         header("Location: ../admin/request/view-request.php?requestID=" . $requestID);
     } else {
         $_SESSION['error'] = "Error disapproving request: " . $conn->error;

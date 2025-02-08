@@ -10,7 +10,7 @@ if (isset($_POST['deleteRequest'])) {
   mysqli_stmt_bind_param($stmt, "s", $requestID);
 
   if (mysqli_stmt_execute($stmt)) {
-    $_SESSION['success'] = "Event request cancelled successfully";
+    $_SESSION['success_delete'] = "Event request cancelled successfully";
     header("Location: ../organizer/request/list-request.php");
   } else {
     $_SESSION['error'] = "Error cancelling event request: " . mysqli_error($conn);

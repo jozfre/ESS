@@ -133,7 +133,7 @@ if(isset($_POST['submit'])) {
 
         if($stmt->execute()) {
             $requestID = $stmt->insert_id; // Get the newly inserted request ID
-            $_SESSION['success'] = "Request created successfully";
+            $_SESSION['success'] = "Event request created successfully";
             header("Location: view-request.php?requestID=" . $requestID);
             exit();
         } else {
@@ -279,7 +279,7 @@ if(isset($_POST['submit'])) {
                               <?php if (isset($error)): ?>
                                         <div class="alert alert-danger alert-dismissible fade show">
                                             <button type="button" class="close" data-dismiss="alert">&times;</button>
-                                            <?php echo $error; ?>
+                                            <i class="fas fa-exclamation-circle"></i><?php echo $error; ?>
                                         </div>
                                     <?php endif; ?>
                             <div class="card card-primary">

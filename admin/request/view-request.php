@@ -206,10 +206,24 @@ if (isset($_GET['requestID'])) {
                         <!-- left column -->
                         <div class="col-md-12">
                             <!-- general form elements -->
+                            <?php if (isset($_SESSION['approve'])): ?>
+                                <div class="alert alert-success alert-dismissible fade show" id="successAlert">
+                                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                                    <i class="fas fa-check-circle"></i> <?php echo $_SESSION['approve']; ?>
+                                </div>
+                            <?php unset($_SESSION['approve']);
+                            endif; ?>
+                            <?php if (isset($_SESSION['disapprove'])): ?>
+                                <div class="alert alert-danger alert-dismissible fade show" id="successAlert">
+                                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                                    <i class="fas fa-window-close"></i> <?php echo $_SESSION['disapprove']; ?>
+                                </div>
+                            <?php unset($_SESSION['disapprove']);
+                            endif; ?>
                             <?php if (isset($error)): ?>
                                 <div class="alert alert-danger alert-dismissible fade show">
                                     <button type="button" class="close" data-dismiss="alert">&times;</button>
-                                    <?php echo $error; ?>
+                                    <i class="fas fa-exclamation-circle"></i><?php echo $error; ?>
                                 </div>
                             <?php endif; ?>
                             <div class="card card-dark">
@@ -451,6 +465,16 @@ if (isset($_GET['requestID'])) {
                 "autoWidth": false,
                 "responsive": true,
             });
+        });
+    </script>
+    <script>
+        $(document).ready(function() {
+            // Auto dismiss alert after 3 seconds
+            if ($('#successAlert').length > 0) {
+                setTimeout(function() {
+                    $("#successAlert").fadeOut('slow');
+                }, 3000);
+            }
         });
     </script>
 </body>

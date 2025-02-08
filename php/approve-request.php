@@ -157,7 +157,7 @@ if (isset($_POST['approve'])) {
         // Commit transaction
         $conn->commit();
 
-        $_SESSION['success'] = "Request approved and event created successfully";
+        $_SESSION['approve'] = "Request approved and event created successfully";
         header("Location: ../admin/request/view-request.php?requestID=" . $requestID);
     } catch (Exception $e) {
         // Rollback on error
